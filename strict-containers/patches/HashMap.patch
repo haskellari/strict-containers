@@ -1,17 +1,17 @@
-Note: this patch is not "perfect":
+We need to do a little bit extra work in this patch:
 
-The HashMap data structure uses a bunch of primitive Array# that we can't
-duplicate and transform to use ! strictness annotations. However, the hashmap
-implementation in Data.HashMap.Internal is quite disciplined about forcing
-values before inserting them into arrays.
+The HashMap data structure in Internal.hs uses a bunch of primitive Array# that
+we can't duplicate and transform to use ! strictness annotations. Instead, we
+add strictness annotations to all functions in Internal/Array.hs that insert an
+element into (or replace an existing one in) an Array.
 
-See https://github.com/haskell-unordered-containers/unordered-containers/issues/311 for more discussion
+For more discussion see https://github.com/haskell-unordered-containers/unordered-containers/issues/311
 
 Index: strict-containers/src/Data/Strict/HashMap/Autogen/Strict.hs
 ===================================================================
---- strict-containers.orig/src/Data/Strict/HashMap/Autogen/Strict.hs
-+++ strict-containers/src/Data/Strict/HashMap/Autogen/Strict.hs
-@@ -99,13 +99,9 @@ module Data.Strict.HashMap.Autogen.Stric
+--- strict-containers.orig/src/Data/Strict/HashMap/Autogen/Strict.hs	2021-04-13 23:51:30.798615589 +0100
++++ strict-containers/src/Data/Strict/HashMap/Autogen/Strict.hs	2021-04-13 23:51:30.790615484 +0100
+@@ -99,13 +99,9 @@
      , fromList
      , fromListWith
      , fromListWithKey
@@ -27,9 +27,9 @@ Index: strict-containers/src/Data/Strict/HashMap/Autogen/Strict.hs
  -- $strictness
 Index: strict-containers/src/Data/Strict/HashMap/Autogen/Internal.hs
 ===================================================================
---- strict-containers.orig/src/Data/Strict/HashMap/Autogen/Internal.hs
-+++ strict-containers/src/Data/Strict/HashMap/Autogen/Internal.hs
-@@ -194,7 +194,7 @@ import Data.Coerce (coerce)
+--- strict-containers.orig/src/Data/Strict/HashMap/Autogen/Internal.hs	2021-04-13 23:51:30.798615589 +0100
++++ strict-containers/src/Data/Strict/HashMap/Autogen/Internal.hs	2021-04-13 23:51:30.790615484 +0100
+@@ -194,7 +194,7 @@
  hash :: H.Hashable a => a -> Hash
  hash = fromIntegral . H.hash
  
@@ -38,3 +38,44 @@ Index: strict-containers/src/Data/Strict/HashMap/Autogen/Internal.hs
    deriving (Eq)
  
  instance (NFData k, NFData v) => NFData (Leaf k v) where
+Index: strict-containers/src/Data/Strict/HashMap/Autogen/Internal/Array.hs
+===================================================================
+--- strict-containers.orig/src/Data/Strict/HashMap/Autogen/Internal/Array.hs	2021-04-13 23:51:30.798615589 +0100
++++ strict-containers/src/Data/Strict/HashMap/Autogen/Internal/Array.hs	2021-04-13 23:51:30.790615484 +0100
+@@ -254,7 +254,7 @@
+ -- state thread, with each element containing the specified initial
+ -- value.
+ new :: Int -> a -> ST s (MArray s a)
+-new (I# n#) b =
++new (I# n#) !b =
+     CHECK_GT("new",n,(0 :: Int))
+     ST $ \s ->
+         case newArray# n# b s of
+@@ -265,15 +265,15 @@
+ new_ n = new n undefinedElem
+ 
+ singleton :: a -> Array a
+-singleton x = runST (singletonM x)
++singleton !x = runST (singletonM x)
+ {-# INLINE singleton #-}
+ 
+ singletonM :: a -> ST s (Array a)
+-singletonM x = new 1 x >>= unsafeFreeze
++singletonM !x = new 1 x >>= unsafeFreeze
+ {-# INLINE singletonM #-}
+ 
+ pair :: a -> a -> Array a
+-pair x y = run $ do
++pair !x !y = run $ do
+     ary <- new 2 x
+     write ary 1 y
+     return ary
+@@ -286,7 +286,7 @@
+ {-# INLINE read #-}
+ 
+ write :: MArray s a -> Int -> a -> ST s ()
+-write ary _i@(I# i#) b = ST $ \ s ->
++write ary _i@(I# i#) !b = ST $ \ s ->
+     CHECK_BOUNDS("write", lengthM ary, _i)
+         case writeArray# (unMArray ary) i# b s of
+             s' -> (# s' , () #)

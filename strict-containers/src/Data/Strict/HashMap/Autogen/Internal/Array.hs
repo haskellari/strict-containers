@@ -254,7 +254,7 @@ rnfArray ary0 = go ary0 n0 0
 -- state thread, with each element containing the specified initial
 -- value.
 new :: Int -> a -> ST s (MArray s a)
-new (I# n#) b =
+new (I# n#) !b =
     CHECK_GT("new",n,(0 :: Int))
     ST $ \s ->
         case newArray# n# b s of
@@ -265,15 +265,15 @@ new_ :: Int -> ST s (MArray s a)
 new_ n = new n undefinedElem
 
 singleton :: a -> Array a
-singleton x = runST (singletonM x)
+singleton !x = runST (singletonM x)
 {-# INLINE singleton #-}
 
 singletonM :: a -> ST s (Array a)
-singletonM x = new 1 x >>= unsafeFreeze
+singletonM !x = new 1 x >>= unsafeFreeze
 {-# INLINE singletonM #-}
 
 pair :: a -> a -> Array a
-pair x y = run $ do
+pair !x !y = run $ do
     ary <- new 2 x
     write ary 1 y
     return ary
@@ -286,7 +286,7 @@ read ary _i@(I# i#) = ST $ \ s ->
 {-# INLINE read #-}
 
 write :: MArray s a -> Int -> a -> ST s ()
-write ary _i@(I# i#) b = ST $ \ s ->
+write ary _i@(I# i#) !b = ST $ \ s ->
     CHECK_BOUNDS("write", lengthM ary, _i)
         case writeArray# (unMArray ary) i# b s of
             s' -> (# s' , () #)
