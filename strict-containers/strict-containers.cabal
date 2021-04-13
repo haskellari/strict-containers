@@ -3,28 +3,30 @@ Version:        0.1
 Synopsis:       Strict containers.
 Category:       Data, Data Structures
 Description:
-    This package provides strict versions of some standard Haskell data
-    containers ('Sequence', 'Map' and 'HashMap'). The reasoning is the same as
-    that for our `strict` package - although some of these containers have
-    strict versions defined already, these only define strict *operations* and
-    the underlying data type remains the same, i.e. by default lazy.
-    .
-    As a result, the guarantees are more awkward to maintain, and furthermore
-    instances are defined lazily on the common type, meaning that external
-    utilities such as `lens` and `optics` work lazily and there is no
-    corresponding strict version at all.
-    .
-    This package defines separate data types, to avoid these problems.
-    .
-    To be clear, the "strict" vs "lazy" discussion refers to the values of a
-    map or the elements of a sequence. The "lazy" standard variants of these
-    data structures are already strict in their keys (for maps) and lengths
-    (for sequences) respectively. This is also why we don't define strict
-    variants of sets here, since the standard variants are already strict.
-    .
-    This library comes with batteries included; i.e., mirror functions and
-    instances of the lazy versions in @containers@ and @unordered-containers@.
-    Other instances are declared in other packages.
+  This package provides strict versions of some standard Haskell containers -
+  including 'Sequence', 'Map' and 'HashMap'.
+  .
+  The reasoning is the same as that for our @strict@ package - though some
+  containers already define strict /operations/ that force their inputs, the
+  underlying data type is shared between the lazy and strict variants, i.e. by
+  default lazy. In particular, instances are defined lazily on the common type,
+  meaning that external utilities such as @lens@, @optics@, and deserialisation
+  instances e.g. for @binary@ and @serialise@, all work lazily and there is not
+  even the option to go strict.
+  .
+  This package defines separate data types, to avoid these problems. Instances
+  can then be defined on these fully-strict data types.
+  .
+  To be clear, the "strict" vs "lazy" discussion refers to the values of a map
+  or the elements of a sequence. The standard variants of these data structures
+  that can be lazy-or-strict are already always-strict in their keys (for maps)
+  and lengths (for sequences) respectively. This is also why we don't define
+  strict variants of sets here, since the standard variants are already strict
+  in their elements.
+  .
+  This library mirrors the API of the standard lazy-or-strict variants in
+  @containers@ and @unordered-containers@, including methods and fundamental
+  instances. Additional instances are defined in other packages.
 License:        BSD3
 License-File:   LICENSE
 Maintainer:     Ximin Luo <infinity0@pwned.gg>
