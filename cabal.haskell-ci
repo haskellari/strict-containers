@@ -1,0 +1,7 @@
+branches: master
+
+-- we have inplace dependencies
+install-dependencies: False
+
+-- to allow different set of packages per GHC versions
+jobs-selection: any
