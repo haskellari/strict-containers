@@ -9,8 +9,8 @@ For more discussion see https://github.com/haskell-unordered-containers/unordere
 
 Index: strict-containers/src/Data/Strict/HashMap/Autogen/Strict.hs
 ===================================================================
---- strict-containers.orig/src/Data/Strict/HashMap/Autogen/Strict.hs	2021-04-13 23:51:30.798615589 +0100
-+++ strict-containers/src/Data/Strict/HashMap/Autogen/Strict.hs	2021-04-13 23:51:30.790615484 +0100
+--- strict-containers.orig/src/Data/Strict/HashMap/Autogen/Strict.hs	2021-04-14 00:56:44.605595368 +0100
++++ strict-containers/src/Data/Strict/HashMap/Autogen/Strict.hs	2021-04-14 00:56:44.597595273 +0100
 @@ -99,13 +99,9 @@
      , fromList
      , fromListWith
@@ -27,8 +27,8 @@ Index: strict-containers/src/Data/Strict/HashMap/Autogen/Strict.hs
  -- $strictness
 Index: strict-containers/src/Data/Strict/HashMap/Autogen/Internal.hs
 ===================================================================
---- strict-containers.orig/src/Data/Strict/HashMap/Autogen/Internal.hs	2021-04-13 23:51:30.798615589 +0100
-+++ strict-containers/src/Data/Strict/HashMap/Autogen/Internal.hs	2021-04-13 23:51:30.790615484 +0100
+--- strict-containers.orig/src/Data/Strict/HashMap/Autogen/Internal.hs	2021-04-14 00:56:44.605595368 +0100
++++ strict-containers/src/Data/Strict/HashMap/Autogen/Internal.hs	2021-04-14 00:56:44.597595273 +0100
 @@ -194,7 +194,7 @@
  hash :: H.Hashable a => a -> Hash
  hash = fromIntegral . H.hash
@@ -40,19 +40,28 @@ Index: strict-containers/src/Data/Strict/HashMap/Autogen/Internal.hs
  instance (NFData k, NFData v) => NFData (Leaf k v) where
 Index: strict-containers/src/Data/Strict/HashMap/Autogen/Internal/Array.hs
 ===================================================================
---- strict-containers.orig/src/Data/Strict/HashMap/Autogen/Internal/Array.hs	2021-04-13 23:51:30.798615589 +0100
-+++ strict-containers/src/Data/Strict/HashMap/Autogen/Internal/Array.hs	2021-04-13 23:51:30.790615484 +0100
-@@ -254,7 +254,7 @@
+--- strict-containers.orig/src/Data/Strict/HashMap/Autogen/Internal/Array.hs	2021-04-14 00:56:44.605595368 +0100
++++ strict-containers/src/Data/Strict/HashMap/Autogen/Internal/Array.hs	2021-04-14 00:57:51.110453479 +0100
+@@ -254,26 +254,30 @@
  -- state thread, with each element containing the specified initial
  -- value.
  new :: Int -> a -> ST s (MArray s a)
 -new (I# n#) b =
-+new (I# n#) !b =
++new i !b = new' i b
++{-# INLINE new #-}
++
++new' :: Int -> a -> ST s (MArray s a)
++new' (I# n#) b =
      CHECK_GT("new",n,(0 :: Int))
      ST $ \s ->
          case newArray# n# b s of
-@@ -265,15 +265,15 @@
- new_ n = new n undefinedElem
+             (# s', ary #) -> (# s', MArray ary #)
+-{-# INLINE new #-}
++{-# INLINE new' #-}
+ 
+ new_ :: Int -> ST s (MArray s a)
+-new_ n = new n undefinedElem
++new_ n = new' n undefinedElem
  
  singleton :: a -> Array a
 -singleton x = runST (singletonM x)
@@ -70,7 +79,7 @@ Index: strict-containers/src/Data/Strict/HashMap/Autogen/Internal/Array.hs
      ary <- new 2 x
      write ary 1 y
      return ary
-@@ -286,7 +286,7 @@
+@@ -286,7 +290,7 @@
  {-# INLINE read #-}
  
  write :: MArray s a -> Int -> a -> ST s ()

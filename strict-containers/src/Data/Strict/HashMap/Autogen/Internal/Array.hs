@@ -254,15 +254,19 @@ rnfArray ary0 = go ary0 n0 0
 -- state thread, with each element containing the specified initial
 -- value.
 new :: Int -> a -> ST s (MArray s a)
-new (I# n#) !b =
+new i !b = new' i b
+{-# INLINE new #-}
+
+new' :: Int -> a -> ST s (MArray s a)
+new' (I# n#) b =
     CHECK_GT("new",n,(0 :: Int))
     ST $ \s ->
         case newArray# n# b s of
             (# s', ary #) -> (# s', MArray ary #)
-{-# INLINE new #-}
+{-# INLINE new' #-}
 
 new_ :: Int -> ST s (MArray s a)
-new_ n = new n undefinedElem
+new_ n = new' n undefinedElem
 
 singleton :: a -> Array a
 singleton !x = runST (singletonM x)
