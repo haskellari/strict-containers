@@ -114,4 +114,96 @@ library
 
 -- generated list for tests
 -- DO NOT EDIT below, AUTOGEN tests
+test-suite map-strict-properties
+  cpp-options: -DSTRICT
+  build-depends: containers
+  default-language: Haskell2010
+  hs-source-dirs:   tests
+  main-is:          map-properties.hs
+  type:             exitcode-stdio-1.0
+  build-depends:    strict-containers
+  build-depends:
+      array    >=0.4.0.0
+    , base     >=4.6     && <5
+    , deepseq  >=1.2     && <1.5
+
+  ghc-options:      -O2
+  other-extensions:
+    BangPatterns
+    CPP
+
+  build-depends:
+      HUnit
+    , QuickCheck                  >=2.7.1
+    , test-framework
+    , test-framework-hunit
+    , test-framework-quickcheck2
+    , transformers
+
+test-suite map-strictness-properties
+  build-depends: containers
+  default-language: Haskell2010
+  hs-source-dirs:   tests
+  main-is:          map-strictness.hs
+  type:             exitcode-stdio-1.0
+  build-depends:    strict-containers
+  build-depends:
+      array                       >=0.4.0.0
+    , base                        >=4.6     && <5
+    , ChasingBottoms
+    , deepseq                     >=1.2     && <1.5
+    , HUnit
+    , QuickCheck                  >=2.7.1
+    , test-framework              >=0.3.3
+    , test-framework-quickcheck2  >=0.2.9
+    , test-framework-hunit
+
+  ghc-options:      -Wall
+  other-extensions:
+    BangPatterns
+    CPP
+
+  other-modules:
+    Utils.IsUnit
+
+test-suite seq-properties
+  default-language: Haskell2010
+  hs-source-dirs:   tests
+  main-is:          seq-properties.hs
+  type:             exitcode-stdio-1.0
+  build-depends:    strict-containers
+  build-depends:
+      array    >=0.4.0.0
+    , base     >=4.6     && <5
+    , deepseq  >=1.2     && <1.5
+
+  ghc-options:      -O2
+  other-extensions:
+    BangPatterns
+    CPP
+
+  build-depends:
+      QuickCheck                  >=2.7.1
+    , test-framework
+    , test-framework-quickcheck2
+    , transformers
+
+test-suite hashmap-strict-properties
+  hs-source-dirs: tests
+  main-is: HashMapProperties.hs
+  type: exitcode-stdio-1.0
+
+  build-depends:
+    base,
+    containers >= 0.5.8,
+    hashable >= 1.0.1.1,
+    QuickCheck >= 2.4.0.1,
+    test-framework >= 0.3.3,
+    test-framework-quickcheck2 >= 0.2.9,
+    strict-containers
+
+  default-language: Haskell2010
+  ghc-options: -Wall
+  cpp-options: -DASSERTS -DSTRICT
+
 -- DO NOT EDIT above, AUTOGEN tests

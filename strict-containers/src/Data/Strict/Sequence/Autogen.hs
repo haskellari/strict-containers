@@ -46,7 +46,7 @@
 --     * Logarithmic-time concatenation with '><'
 --     * Logarithmic-time splitting with 'splitAt', 'take' and 'drop'
 --     * Logarithmic-time access to any element with
---     'lookup', '!?', 'index', 'insertAt', 'deleteAt', 'adjust'', and 'update'
+--     'lookup', '!?', 'index', 'insertAt', 'deleteAt', 'adjust', and 'update'
 --
 --   Note that sequences are typically /slower/ than lists when using only
 --   operations for which they have the same big-\(O\) complexity: sequences
@@ -204,7 +204,6 @@ module Data.Strict.Sequence.Autogen (
     (!?),           -- :: Seq a -> Int -> Maybe a
     index,          -- :: Seq a -> Int -> a
     adjust,         -- :: (a -> a) -> Int -> Seq a -> Seq a
-    adjust',        -- :: (a -> a) -> Int -> Seq a -> Seq a
     update,         -- :: Int -> a -> Seq a -> Seq a
     take,           -- :: Int -> Seq a -> Seq a
     drop,           -- :: Int -> Seq a -> Seq a
