@@ -7,10 +7,8 @@ element into (or replace an existing one in) an Array.
 
 For more discussion see https://github.com/haskell-unordered-containers/unordered-containers/issues/311
 
-Index: strict-containers/src/Data/Strict/HashMap/Autogen/Strict.hs
-===================================================================
---- strict-containers.orig/src/Data/Strict/HashMap/Autogen/Strict.hs	2021-04-14 00:56:44.605595368 +0100
-+++ strict-containers/src/Data/Strict/HashMap/Autogen/Strict.hs	2021-04-14 00:56:44.597595273 +0100
+--- a/src/Data/Strict/HashMap/Autogen/Strict.hs
++++ b/src/Data/Strict/HashMap/Autogen/Strict.hs
 @@ -99,13 +99,9 @@
      , fromList
      , fromListWith
@@ -25,10 +23,8 @@ Index: strict-containers/src/Data/Strict/HashMap/Autogen/Strict.hs
  import Prelude ()
  
  -- $strictness
-Index: strict-containers/src/Data/Strict/HashMap/Autogen/Internal.hs
-===================================================================
---- strict-containers.orig/src/Data/Strict/HashMap/Autogen/Internal.hs	2021-04-14 00:56:44.605595368 +0100
-+++ strict-containers/src/Data/Strict/HashMap/Autogen/Internal.hs	2021-04-14 00:56:44.597595273 +0100
+--- a/src/Data/Strict/HashMap/Autogen/Internal.hs
++++ b/src/Data/Strict/HashMap/Autogen/Internal.hs
 @@ -194,7 +194,7 @@
  hash :: H.Hashable a => a -> Hash
  hash = fromIntegral . H.hash
@@ -38,10 +34,8 @@ Index: strict-containers/src/Data/Strict/HashMap/Autogen/Internal.hs
    deriving (Eq)
  
  instance (NFData k, NFData v) => NFData (Leaf k v) where
-Index: strict-containers/src/Data/Strict/HashMap/Autogen/Internal/Array.hs
-===================================================================
---- strict-containers.orig/src/Data/Strict/HashMap/Autogen/Internal/Array.hs	2021-04-14 00:56:44.605595368 +0100
-+++ strict-containers/src/Data/Strict/HashMap/Autogen/Internal/Array.hs	2021-04-14 00:57:51.110453479 +0100
+--- a/src/Data/Strict/HashMap/Autogen/Internal/Array.hs
++++ b/src/Data/Strict/HashMap/Autogen/Internal/Array.hs
 @@ -254,26 +254,30 @@
  -- state thread, with each element containing the specified initial
  -- value.

@@ -5,17 +5,36 @@ patch below adheres to what's needed. From the paper:
 suspend the middle subtree of each Deep node, so only Θ(log n) suspensions are
 required in a tree of size n. Even in a lazy language, some space could be
 saved in practice by ensuring that these were the only suspensions in the tree,
-for example by using Haskell’s strictness annotations." i.e. making everything
-else strict preserves the performance bounds."
+for example by using Haskell’s strictness annotations."
 
 In other words, everything can be strict, except for the middle FingerTree
 in the Deep constructor.
 
-Index: strict-containers/src/Data/Strict/Sequence/Autogen/Internal.hs
-===================================================================
---- strict-containers.orig/src/Data/Strict/Sequence/Autogen/Internal.hs
-+++ strict-containers/src/Data/Strict/Sequence/Autogen/Internal.hs
-@ -995,7 +995,7 @@ seqDataType = mkDataType "Data.Strict.Se
+We also remove the lazy adjust function, and rename the strict adjust' to adjust.
+
+--- a/src/Data/Strict/Sequence/Autogen/Internal.hs
++++ b/src/Data/Strict/Sequence/Autogen/Internal.hs
+@@ -144,7 +144,6 @@
+     (!?),           -- :: Seq a -> Int -> Maybe a
+     index,          -- :: Seq a -> Int -> a
+     adjust,         -- :: (a -> a) -> Int -> Seq a -> Seq a
+-    adjust',        -- :: (a -> a) -> Int -> Seq a -> Seq a
+     update,         -- :: Int -> a -> Seq a -> Seq a
+     take,           -- :: Int -> Seq a -> Seq a
+     drop,           -- :: Int -> Seq a -> Seq a
+@@ -183,11 +182,9 @@
+     zipWith4,       -- :: (a -> b -> c -> d -> e) -> Seq a -> Seq b -> Seq c -> Seq d -> Seq e
+     unzip,          -- :: Seq (a, b) -> (Seq a, Seq b)
+     unzipWith,      -- :: (a -> (b, c)) -> Seq a -> (Seq b, Seq c)
+-#ifdef TESTING
+     deep,
+     node2,
+     node3,
+-#endif
+     ) where
+ 
+ import Prelude hiding (
+@@ -995,7 +992,7 @@
  
  data FingerTree a
      = EmptyT
@@ -24,7 +43,7 @@ Index: strict-containers/src/Data/Strict/Sequence/Autogen/Internal.hs
      | Deep {-# UNPACK #-} !Int !(Digit a) (FingerTree (Node a)) !(Digit a)
  #ifdef TESTING
      deriving Show
-@@ -1184,10 +1184,10 @@ pullR s pr m = case viewRTree m of
+@@ -1184,10 +1181,10 @@
  -- Digits
  
  data Digit a
@@ -39,7 +58,7 @@ Index: strict-containers/src/Data/Strict/Sequence/Autogen/Internal.hs
  #ifdef TESTING
      deriving Show
  #endif
-@@ -1287,8 +1287,8 @@ digitToTree' !_n (One a) = Single a
+@@ -1287,8 +1284,8 @@
  -- Nodes
  
  data Node a
@@ -50,3 +69,70 @@ Index: strict-containers/src/Data/Strict/Sequence/Autogen/Internal.hs
  #ifdef TESTING
      deriving Show
  #endif
+@@ -2517,25 +2514,12 @@
+     sab     = sa + size b
+     sabc    = sab + size c
+ 
+--- | \( O(\log(\min(i,n-i))) \). Update the element at the specified position.  If
+--- the position is out of range, the original sequence is returned.  'adjust'
+--- can lead to poor performance and even memory leaks, because it does not
+--- force the new value before installing it in the sequence. 'adjust'' should
+--- usually be preferred.
+---
+--- @since 0.5.8
+-adjust          :: (a -> a) -> Int -> Seq a -> Seq a
+-adjust f i (Seq xs)
+-  -- See note on unsigned arithmetic in splitAt
+-  | fromIntegral i < (fromIntegral (size xs) :: Word) = Seq (adjustTree (`seq` fmap f) i xs)
+-  | otherwise   = Seq xs
+-
+ -- | \( O(\log(\min(i,n-i))) \). Update the element at the specified position.
+ -- If the position is out of range, the original sequence is returned.
+ -- The new value is forced before it is installed in the sequence.
+ --
+ -- @
+--- adjust' f i xs =
++-- adjust f i xs =
+ --  case xs !? i of
+ --    Nothing -> xs
+ --    Just x -> let !x' = f x
+@@ -2543,9 +2527,9 @@
+ -- @
+ --
+ -- @since 0.5.8
+-adjust'          :: forall a . (a -> a) -> Int -> Seq a -> Seq a
++adjust          :: forall a . (a -> a) -> Int -> Seq a -> Seq a
+ #if __GLASGOW_HASKELL__ >= 708
+-adjust' f i xs
++adjust f i xs
+   -- See note on unsigned arithmetic in splitAt
+   | fromIntegral i < (fromIntegral (length xs) :: Word) =
+       coerce $ adjustTree (\ !_k (ForceBox a) -> ForceBox (f a)) i (coerce xs)
+@@ -2554,7 +2538,7 @@
+ -- This is inefficient, but fixing it would take a lot of fuss and bother
+ -- for little immediate gain. We can deal with that when we have another
+ -- Haskell implementation to worry about.
+-adjust' f i xs =
++adjust f i xs =
+   case xs !? i of
+     Nothing -> xs
+     Just x -> let !x' = f x
+--- a/src/Data/Strict/Sequence/Autogen.hs
++++ b/src/Data/Strict/Sequence/Autogen.hs
+@@ -46,7 +46,7 @@
+ --     * Logarithmic-time concatenation with '><'
+ --     * Logarithmic-time splitting with 'splitAt', 'take' and 'drop'
+ --     * Logarithmic-time access to any element with
+---     'lookup', '!?', 'index', 'insertAt', 'deleteAt', 'adjust'', and 'update'
++--     'lookup', '!?', 'index', 'insertAt', 'deleteAt', 'adjust', and 'update'
+ --
+ --   Note that sequences are typically /slower/ than lists when using only
+ --   operations for which they have the same big-\(O\) complexity: sequences
+@@ -204,7 +204,6 @@
+     (!?),           -- :: Seq a -> Int -> Maybe a
+     index,          -- :: Seq a -> Int -> a
+     adjust,         -- :: (a -> a) -> Int -> Seq a -> Seq a
+-    adjust',        -- :: (a -> a) -> Int -> Seq a -> Seq a
+     update,         -- :: Int -> a -> Seq a -> Seq a
+     take,           -- :: Int -> Seq a -> Seq a
+     drop,           -- :: Int -> Seq a -> Seq a

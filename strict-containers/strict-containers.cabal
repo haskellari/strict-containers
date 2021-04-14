@@ -24,6 +24,10 @@ Description:
   strict variants of sets here, since the standard variants are already strict
   in their elements.
   .
+  Note: generally, instances for strict containers violate their respective
+  laws in the presence of bottom (undefined, error, infinite-loop). In the
+  absence of bottom, laws are preserved.
+  .
   This library mirrors the API of the standard lazy-or-strict variants in
   @containers@ and @unordered-containers@, including methods and fundamental
   instances. Additional instances are defined in other packages.
@@ -107,3 +111,7 @@ library
     -- DO NOT EDIT above, AUTOGEN ContainersUtils
 
   include-dirs: include
+
+-- generated list for tests
+-- DO NOT EDIT below, AUTOGEN tests
+-- DO NOT EDIT above, AUTOGEN tests
