@@ -7,6 +7,7 @@ import           Codec.CBOR.Decoding
 import           Codec.CBOR.Encoding
 import           Codec.Serialise.Class
 import           Data.Hashable (Hashable)
+import           Data.Semigroup (Semigroup (..)) -- helps with compatibility
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Strict.HashMap as HashMap
