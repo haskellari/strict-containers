@@ -30,7 +30,9 @@ Description:
   .
   This library mirrors the API of the standard lazy-or-strict variants in
   @containers@ and @unordered-containers@, including methods and fundamental
-  instances. Additional instances are defined in other packages.
+  instances. It also contains instances for @binary@ and @indexed-traversable@.
+  More instances are defined in other packages, e.g. @strict-containers-lens@
+  and @strict-containers-serialise@.
 License:        BSD3
 License-File:   LICENSE
 Maintainer:     Ximin Luo <infinity0@pwned.gg>
@@ -44,7 +46,6 @@ extra-source-files:
     -- DO NOT EDIT below, AUTOGEN includes
     include/containers.h
     -- DO NOT EDIT above, AUTOGEN includes
-
 tested-with:
   GHC ==8.2.2
    || ==8.4.4
@@ -61,8 +62,10 @@ library
   build-depends:
       base                  >= 4.5.0.0  && < 5
     , array                 >= 0.4.0.0
+    , binary                >= 0.8.4.1  && < 0.9
     , containers            >= 0.5.9.2  && < 0.7
     , deepseq               >= 1.2      && < 1.5
+    , indexed-traversable   >= 0.1.1    && < 0.2
     , hashable              >= 1.2.7.0  && < 1.4
     , unordered-containers  >= 0.2      && < 0.3
     , strict                >= 0.4      && < 0.5
