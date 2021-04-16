@@ -82,6 +82,7 @@ library
     Data.Strict.HashMap.Autogen.Internal.List
     Data.Strict.HashMap.Autogen.Internal.Unsafe
     -- DO NOT EDIT above, AUTOGEN HashMap
+    Data.Strict.HashSet
     Data.Strict.Map
     Data.Strict.Map.Internal
     -- generated list for Map
@@ -101,6 +102,7 @@ library
     Data.Strict.Sequence.Autogen.Internal
     Data.Strict.Sequence.Autogen.Internal.Sorting
     -- DO NOT EDIT above, AUTOGEN Sequence
+    Data.Strict.Set
     -- generated list for ContainersUtils
     -- DO NOT EDIT below, AUTOGEN ContainersUtils
     Data.Strict.ContainersUtils.Autogen.Coercions
