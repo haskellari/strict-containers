@@ -130,18 +130,17 @@ library
 -- generated list for tests
 -- DO NOT EDIT below, AUTOGEN tests
 test-suite map-strict-properties
-  cpp-options: -DSTRICT
-  build-depends: containers
   default-language: Haskell2010
   hs-source-dirs:   tests
   main-is:          map-properties.hs
   type:             exitcode-stdio-1.0
-  build-depends:    strict-containers
+  build-depends:    containers, strict-containers
   build-depends:
       array    >=0.4.0.0
     , base     >=4.6     && <5
     , deepseq  >=1.2     && <1.5
 
+  cpp-options:      -DSTRICT
   ghc-options:      -O2
   other-extensions:
     BangPatterns
@@ -156,12 +155,11 @@ test-suite map-strict-properties
     , transformers
 
 test-suite map-strictness-properties
-  build-depends: containers
   default-language: Haskell2010
   hs-source-dirs:   tests
   main-is:          map-strictness.hs
   type:             exitcode-stdio-1.0
-  build-depends:    strict-containers
+  build-depends:    containers, strict-containers
   build-depends:
       array                       >=0.4.0.0
     , base                        >=4.6     && <5
@@ -215,10 +213,48 @@ test-suite hashmap-strict-properties
     QuickCheck >= 2.4.0.1,
     test-framework >= 0.3.3,
     test-framework-quickcheck2 >= 0.2.9,
-    strict-containers
+    strict-containers,
+    unordered-containers
 
   default-language: Haskell2010
   ghc-options: -Wall
   cpp-options: -DASSERTS -DSTRICT
+
+test-suite vector-tests-O0
+  Default-Language: Haskell2010
+  type: exitcode-stdio-1.0
+  Main-Is:  VectorMain.hs
+
+  other-modules: Boilerplater
+                 Tests.Bundle
+                 Tests.Move
+                 Tests.Vector
+                 Tests.Vector.Property
+                 Tests.Vector.Boxed
+                 Tests.Vector.UnitTests
+                 Utilities
+
+  hs-source-dirs: tests
+  Build-Depends: base >= 4.5 && < 5, template-haskell, base-orphans >= 0.6, vector, strict-containers,
+                 primitive, random,
+                 QuickCheck >= 2.9 && < 2.15, HUnit, tasty,
+                 tasty-hunit, tasty-quickcheck,
+                 transformers >= 0.2.0.0
+  if !impl(ghc > 8.0)
+    Build-Depends: semigroups
+
+  default-extensions: CPP,
+              ScopedTypeVariables,
+              PatternGuards,
+              MultiParamTypeClasses,
+              FlexibleContexts,
+              Rank2Types,
+              TypeSynonymInstances,
+              TypeFamilies,
+              TemplateHaskell
+
+  Ghc-Options: -O0 -threaded
+  Ghc-Options: -Wall
+
 
 -- DO NOT EDIT above, AUTOGEN tests

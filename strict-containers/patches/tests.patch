@@ -29,3 +29,180 @@
  
  import Utils.IsUnit
  
+--- a/tests/Tests/Move.hs
++++ b/tests/Tests/Move.hs
+@@ -13,9 +13,7 @@
+ import qualified Data.Vector.Generic as G
+ import qualified Data.Vector.Generic.Mutable as M
+ 
+-import qualified Data.Vector as V
+-import qualified Data.Vector.Primitive as P
+-import qualified Data.Vector.Storable as S
++import qualified Data.Strict.Vector as V
+ import qualified Data.Vector.Unboxed as U
+ 
+ basicMove :: G.Vector v a => v a -> Int -> Int -> Int -> v a
+@@ -43,7 +41,4 @@
+ 
+ tests =
+     [testProperty "Data.Vector.Mutable (Move)" (testMove :: V.Vector Int -> Property),
+-     testProperty "Data.Vector.Primitive.Mutable (Move)" (testMove :: P.Vector Int -> Property),
+-     testProperty "Data.Vector.Unboxed.Mutable (Move)" (testMove :: U.Vector Int -> Property),
+-     testProperty "Data.Vector.Storable.Mutable (Move)" (testMove :: S.Vector Int -> Property),
+      testProperty "Data.Vector.Generic.Mutable (nextPermutation)" testPermutations]
+--- a/tests/Tests/Vector.hs
++++ b/tests/Tests/Vector.hs
+@@ -3,13 +3,7 @@
+ 
+ import Test.Tasty (testGroup)
+ import qualified Tests.Vector.Boxed
+-import qualified Tests.Vector.Primitive
+-import qualified Tests.Vector.Storable
+-import qualified Tests.Vector.Unboxed
+ 
+ tests =
+   [ testGroup "Tests.Vector.Boxed" Tests.Vector.Boxed.tests
+-  , testGroup "Tests.Vector.Primitive" Tests.Vector.Primitive.tests
+-  , testGroup "Tests.Vector.Storable" Tests.Vector.Storable.tests
+-  , testGroup "Tests.Vector.Unboxed" Tests.Vector.Unboxed.tests
+   ]
+--- a/tests/Tests/Vector/Boxed.hs
++++ b/tests/Tests/Vector/Boxed.hs
+@@ -2,13 +2,13 @@
+ module Tests.Vector.Boxed (tests) where
+ 
+ import Test.Tasty
+-import qualified Data.Vector
++import qualified Data.Strict.Vector
+ import Tests.Vector.Property
+ 
+ import GHC.Exts (inline)
+ 
+ 
+-testGeneralBoxedVector :: forall a. (CommonContext a Data.Vector.Vector, Ord a, Data a) => Data.Vector.Vector a -> [Test]
++testGeneralBoxedVector :: forall a. (CommonContext a Data.Strict.Vector.Vector, Ord a, Data a) => Data.Strict.Vector.Vector a -> [Test]
+ testGeneralBoxedVector dummy = concatMap ($ dummy)
+   [
+     testSanity
+@@ -31,7 +31,7 @@
+   , testBoolFunctions
+   ]
+ 
+-testNumericBoxedVector :: forall a. (CommonContext a Data.Vector.Vector, Ord a, Num a, Enum a, Random a, Data a) => Data.Vector.Vector a -> [Test]
++testNumericBoxedVector :: forall a. (CommonContext a Data.Strict.Vector.Vector, Ord a, Num a, Enum a, Random a, Data a) => Data.Strict.Vector.Vector a -> [Test]
+ testNumericBoxedVector dummy = concatMap ($ dummy)
+   [
+     testGeneralBoxedVector
+@@ -41,7 +41,7 @@
+ 
+ tests =
+   [ testGroup "Bool" $
+-    testBoolBoxedVector (undefined :: Data.Vector.Vector Bool)
++    testBoolBoxedVector (undefined :: Data.Strict.Vector.Vector Bool)
+   , testGroup "Int" $
+-    testNumericBoxedVector (undefined :: Data.Vector.Vector Int)
++    testNumericBoxedVector (undefined :: Data.Strict.Vector.Vector Int)
+   ]
+--- a/tests/Tests/Vector/UnitTests.hs
++++ b/tests/Tests/Vector/UnitTests.hs
+@@ -12,8 +12,8 @@
+ import Data.Typeable
+ import qualified Data.List as List
+ import qualified Data.Vector.Generic  as Generic
+-import qualified Data.Vector as Boxed
+-import qualified Data.Vector.Mutable as MBoxed
++import qualified Data.Strict.Vector as Boxed
++import qualified Data.Strict.Vector.Autogen.Mutable as MBoxed
+ import qualified Data.Vector.Primitive as Primitive
+ import qualified Data.Vector.Storable as Storable
+ import qualified Data.Vector.Unboxed as Unboxed
+--- a/strict-containers.cabal
++++ b/strict-containers.cabal
+@@ -134,12 +134,13 @@
+   hs-source-dirs:   tests
+   main-is:          map-properties.hs
+   type:             exitcode-stdio-1.0
+-  build-depends:    containers-tests
++  build-depends:    containers, strict-containers
+   build-depends:
+       array    >=0.4.0.0
+     , base     >=4.6     && <5
+     , deepseq  >=1.2     && <1.5
+ 
++  cpp-options:      -DSTRICT
+   ghc-options:      -O2
+   other-extensions:
+     BangPatterns
+@@ -158,7 +159,7 @@
+   hs-source-dirs:   tests
+   main-is:          map-strictness.hs
+   type:             exitcode-stdio-1.0
+-  build-depends:    containers-tests
++  build-depends:    containers, strict-containers
+   build-depends:
+       array                       >=0.4.0.0
+     , base                        >=4.6     && <5
+@@ -183,7 +184,7 @@
+   hs-source-dirs:   tests
+   main-is:          seq-properties.hs
+   type:             exitcode-stdio-1.0
+-  build-depends:    containers-tests
++  build-depends:    strict-containers
+   build-depends:
+       array    >=0.4.0.0
+     , base     >=4.6     && <5
+@@ -212,6 +213,7 @@
+     QuickCheck >= 2.4.0.1,
+     test-framework >= 0.3.3,
+     test-framework-quickcheck2 >= 0.2.9,
++    strict-containers,
+     unordered-containers
+ 
+   default-language: Haskell2010
+@@ -221,7 +223,7 @@
+ test-suite vector-tests-O0
+   Default-Language: Haskell2010
+   type: exitcode-stdio-1.0
+-  Main-Is:  Main.hs
++  Main-Is:  VectorMain.hs
+ 
+   other-modules: Boilerplater
+                  Tests.Bundle
+@@ -229,14 +231,11 @@
+                  Tests.Vector
+                  Tests.Vector.Property
+                  Tests.Vector.Boxed
+-                 Tests.Vector.Storable
+-                 Tests.Vector.Primitive
+-                 Tests.Vector.Unboxed
+                  Tests.Vector.UnitTests
+                  Utilities
+ 
+   hs-source-dirs: tests
+-  Build-Depends: base >= 4.5 && < 5, template-haskell, base-orphans >= 0.6, vector,
++  Build-Depends: base >= 4.5 && < 5, template-haskell, base-orphans >= 0.6, vector, strict-containers,
+                  primitive, random,
+                  QuickCheck >= 2.9 && < 2.15, HUnit, tasty,
+                  tasty-hunit, tasty-quickcheck,
+@@ -257,10 +256,5 @@
+   Ghc-Options: -O0 -threaded
+   Ghc-Options: -Wall
+ 
+-  if !flag(Wall)
+-    Ghc-Options: -fno-warn-orphans -fno-warn-missing-signatures
+-    if impl(ghc >= 8.0) && impl( ghc < 8.1)
+-      Ghc-Options: -Wno-redundant-constraints
+-
+ 
+ -- DO NOT EDIT above, AUTOGEN tests
+--- a/tests/Utilities.hs
++++ b/tests/Utilities.hs
+@@ -4,7 +4,7 @@
+ import Test.QuickCheck
+ 
+ import Data.Foldable
+-import qualified Data.Vector as DV
++import qualified Data.Strict.Vector as DV
+ import qualified Data.Vector.Generic as DVG
+ import qualified Data.Vector.Primitive as DVP
+ import qualified Data.Vector.Storable as DVS

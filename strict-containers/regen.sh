@@ -89,8 +89,7 @@ copy_test_and_rename() {
 	cp -d --preserve=all "../contrib/$pkg/$test" tests/
 	rename_modules "$path_r" "$path_l" tests/"$(basename "$test")"
 	cat "../contrib/$pkg"/*.cabal | \
-	  get_section "test-suite " "$testname" | \
-	  sed -e 's/'"$(basename "$pkg")"'/strict-containers/g' >> "$TESTS_CABAL"
+	  get_section "^[a-zA-Z][-a-zA-Z]* \?" "$testname" >> "$TESTS_CABAL"
 }
 
 copy_and_rename unordered-containers HashMap Data/HashMap "/Lazy.hs /Internal/Lazy.hs"
@@ -119,14 +118,14 @@ if [ -z "$CLEAN" ]; then
 	copy_test_and_rename containers/containers-tests tests/map-strictness.hs map-strictness-properties Data/Map Data/Strict/Map/Autogen
 	copy_test_and_rename containers/containers-tests tests/seq-properties.hs seq-properties Data/Sequence Data/Strict/Sequence/Autogen
 	copy_test_and_rename unordered-containers tests/HashMapProperties.hs hashmap-strict-properties Data/HashMap Data/Strict/HashMap/Autogen
+	copy_test_and_rename vector tests/Main.hs vector-tests-O0 XXX XXX
+	mv tests/Main.hs tests/VectorMain.hs
+	cp -a ../contrib/vector/tests/{Tests,Boilerplater.hs,Utilities.hs} tests
+	rm -f tests/Tests/Vector/{Primitive,Unboxed,Storable}.hs
+
 	cat tests.cabal.in | fixup_cabal tests ""
 	export -n TESTS_CABAL
 	rm -f tests.cabal.in
-	# some containers tests depend on other structures like set, lazy map
-	sed -i -e 's/test-suite map-strict-properties/test-suite map-strict-properties\
-  cpp-options: -DSTRICT\
-  build-depends: containers/g' -e 's/test-suite map-strictness-properties/test-suite map-strictness-properties\
-  build-depends: containers/g' strict-containers.cabal
 	patch -p1 < "patches/tests.patch"
 else
 	cat /dev/null | fixup_cabal tests ""
