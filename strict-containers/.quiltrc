@@ -1,0 +1,2 @@
+QUILT_DIFF_ARGS="-p ab --no-timestamps --no-index --color=auto"
+QUILT_REFRESH_ARGS="-p ab --no-timestamps --no-index"
