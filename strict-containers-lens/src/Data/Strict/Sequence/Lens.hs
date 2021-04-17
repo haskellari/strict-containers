@@ -1,11 +1,10 @@
-{-# LANGUAGE CPP                #-}
-{-# LANGUAGE FlexibleContexts   #-}
-{-# LANGUAGE RankNTypes         #-}
-{-# LANGUAGE TypeFamilies       #-}
-#if !MIN_VERSION_lens(5,0,0)
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-#endif
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Data.Strict.Sequence.Lens
@@ -19,6 +18,7 @@ module Data.Strict.Sequence.Lens
 
 import           Control.Lens
 
+import qualified Data.Foldable as Foldable
 import qualified Data.Strict.Sequence as Seq
 
 import           Data.Strict.Sequence (Seq, ViewL(EmptyL), ViewR(EmptyR), (><), viewl, viewr)
@@ -49,6 +49,35 @@ instance Ixed (Seq a) where
     | 0 <= i && i < Seq.length m = f (Seq.index m i) <&> \a -> Seq.update i a m
     | otherwise                  = pure m
   {-# INLINE ix #-}
+
+instance AsEmpty (Seq a) where
+  _Empty = nearly Seq.empty Seq.null
+  {-# INLINE _Empty #-}
+
+instance Each (Seq a) (Seq b) a b where
+  each = traversed
+  {-# INLINE each #-}
+
+instance (t ~ Seq a') => Rewrapped (Seq a) t
+instance Wrapped (Seq a) where
+  type Unwrapped (Seq a) = [a]
+  _Wrapped' = iso Foldable.toList Seq.fromList
+  {-# INLINE _Wrapped' #-}
+
+instance Cons (Seq a) (Seq b) a b where
+  _Cons = prism (uncurry (Seq.<|)) $ \aas -> case viewl aas of
+    a Seq.:< as -> Right (a, as)
+    EmptyL  -> Left mempty
+  {-# INLINE _Cons #-}
+
+instance Snoc (Seq a) (Seq b) a b where
+  _Snoc = prism (uncurry (Seq.|>)) $ \aas -> case viewr aas of
+    as Seq.:> a -> Right (as, a)
+    EmptyR  -> Left mempty
+  {-# INLINE _Snoc #-}
+
+instance Reversing (Seq a) where
+  reversing = Seq.reverse
 
 -- | Analogous to 'Data.Sequence.Lens.viewL'.
 viewL :: Iso (Seq a) (Seq b) (ViewL a) (ViewL b)

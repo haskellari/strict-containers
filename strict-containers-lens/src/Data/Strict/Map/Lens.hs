@@ -1,11 +1,10 @@
-{-# LANGUAGE CPP                #-}
-{-# LANGUAGE FlexibleContexts   #-}
-{-# LANGUAGE RankNTypes         #-}
-{-# LANGUAGE TypeFamilies       #-}
-#if !MIN_VERSION_lens(5,0,0)
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-#endif
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Data.Strict.Map.Lens
@@ -49,6 +48,32 @@ instance Ord k => Ixed (Map k a) where
 instance Ord k => At (Map k v) where
   at k f = M.alterF f k
   {-# INLINE at #-}
+
+instance AsEmpty (Map k a) where
+  _Empty = nearly M.empty M.null
+  {-# INLINE _Empty #-}
+
+instance (c ~ d) => Each (Map c a) (Map d b) a b where
+  each = traversed
+  {-# INLINE each #-}
+
+instance (t ~ Map k' a', Ord k) => Rewrapped (Map k a) t
+instance Ord k => Wrapped (Map k a) where
+  type Unwrapped (Map k a) = [(k, a)]
+  _Wrapped' = iso M.toAscList M.fromList
+  {-# INLINE _Wrapped' #-}
+
+instance Ord k => TraverseMin k (Map k) where
+  traverseMin f m = case M.minViewWithKey m of
+    Just ((k, a), _) -> indexed f k a <&> \v -> M.updateMin (const (Just v)) m
+    Nothing          -> pure m
+  {-# INLINE traverseMin #-}
+
+instance Ord k => TraverseMax k (Map k) where
+  traverseMax f m = case M.maxViewWithKey m of
+    Just ((k, a), _) -> indexed f k a <&> \v -> M.updateMax (const (Just v)) m
+    Nothing          -> pure m
+  {-# INLINE traverseMax #-}
 
 -- | Analogous to 'Data.Map.Lens.toMapOf'.
 toMapOf :: IndexedGetting i (Map i a) s a -> s -> Map i a
