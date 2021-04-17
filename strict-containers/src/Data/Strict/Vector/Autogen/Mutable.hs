@@ -117,7 +117,7 @@ instance G.MVector MVector a where
   basicInitialize _ = return ()
 
   {-# INLINE basicUnsafeReplicate #-}
-  basicUnsafeReplicate n x
+  basicUnsafeReplicate n !x
     = do
         arr <- newArray n x
         return (MVector 0 n arr)
@@ -126,7 +126,7 @@ instance G.MVector MVector a where
   basicUnsafeRead (MVector i _ arr) j = readArray arr (i+j)
 
   {-# INLINE basicUnsafeWrite #-}
-  basicUnsafeWrite (MVector i _ arr) j x = writeArray arr (i+j) x
+  basicUnsafeWrite (MVector i _ arr) j !x = writeArray arr (i+j) x
 
   {-# INLINE basicUnsafeCopy #-}
   basicUnsafeCopy (MVector i n dst) (MVector j _ src)

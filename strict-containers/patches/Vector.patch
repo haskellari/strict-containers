@@ -1,12 +1,18 @@
 Similar to HashMap, Vector internally uses a primitive Array# which we can't
-add ! annotations to. Luckily they provide a hook `elemseq` that (in theory)
-allows you to easily make all operations strict, assuming vector implemented
-the usage of this perfectly in Data.Vector.Generic.
+add ! annotations to. Luckily, primitive operations are never called directly
+but via instance methods of Data.Vector.Generic.{Vector,MVector} which can be
+overridden. So that's what this patch does.
 
-This is again not ideal - the purpose of this package is to use datatype !
-annotations - but is the best that we can do for now. There remains a small
-chance that elemseq is not used perfectly in vector; if you spot any leaks
-please file us a bug and we'll work with the vector maintainers to fix it.
+There remains a very small chance that future changes will break this and use
+primitive operations directly; if you update Vector you should check that:
+
+- Vector/Autogen.hs does not use newArray/writeArray[1] anywhere
+- Vector/Autogen/Mutable.hs only applies newArray/writeArray[1] to an
+  element-typed parameter of the parent function where the parameter has a bang
+  pattern on it; except that `newArray _ uninitialised` is OK.
+
+[1] or any other primitive operations that take an element-type input i.e. with
+type ([.. ->] a -> ..), e.g. from Data.Primitive.Array or a GHC primop.
 
 For more discussion see https://github.com/haskell/vector/issues/380
 
@@ -69,3 +75,21 @@ vector upstream CI doesn't run haddock so they don't see this issue themselves
          deriving ( Typeable )
  
  type IOVector = MVector RealWorld
+@@ -119,7 +117,7 @@
+   basicInitialize _ = return ()
+ 
+   {-# INLINE basicUnsafeReplicate #-}
+-  basicUnsafeReplicate n x
++  basicUnsafeReplicate n !x
+     = do
+         arr <- newArray n x
+         return (MVector 0 n arr)
+@@ -128,7 +126,7 @@
+   basicUnsafeRead (MVector i _ arr) j = readArray arr (i+j)
+ 
+   {-# INLINE basicUnsafeWrite #-}
+-  basicUnsafeWrite (MVector i _ arr) j x = writeArray arr (i+j) x
++  basicUnsafeWrite (MVector i _ arr) j !x = writeArray arr (i+j) x
+ 
+   {-# INLINE basicUnsafeCopy #-}
+   basicUnsafeCopy (MVector i n dst) (MVector j _ src)
