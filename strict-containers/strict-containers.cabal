@@ -67,8 +67,11 @@ library
     , deepseq               >= 1.2      && < 1.5
     , indexed-traversable   >= 0.1.1    && < 0.2
     , hashable              >= 1.2.7.0  && < 1.4
+    , primitive             >= 0.6.4.0  && < 0.8
     , unordered-containers  >= 0.2      && < 0.3
     , strict                >= 0.4      && < 0.5
+    , vector                >= 0.12     && < 0.13
+    , vector-binary-instances >= 0.2    && < 0.3
 
   exposed-modules:
     Data.Strict.HashMap
@@ -114,6 +117,13 @@ library
     Data.Strict.ContainersUtils.Autogen.BitQueue
     Data.Strict.ContainersUtils.Autogen.TypeError
     -- DO NOT EDIT above, AUTOGEN ContainersUtils
+    Data.Strict.Vector
+    Data.Strict.Vector.Internal
+    -- generated list for Vector
+    -- DO NOT EDIT below, AUTOGEN Vector
+    Data.Strict.Vector.Autogen
+    Data.Strict.Vector.Autogen.Mutable
+    -- DO NOT EDIT above, AUTOGEN Vector
 
   include-dirs: include
 

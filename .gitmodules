@@ -4,3 +4,6 @@
 [submodule "contrib/unordered-containers"]
 	path = contrib/unordered-containers
 	url = https://github.com/haskell-unordered-containers/unordered-containers
+[submodule "contrib/vector"]
+	path = contrib/vector
+	url = https://github.com/haskell/vector

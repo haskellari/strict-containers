@@ -7,6 +7,7 @@ shopt -s nullglob globstar
 
 ( cd ../contrib/containers && git checkout v0.6.4.1 )
 ( cd ../contrib/unordered-containers && git checkout v0.2.13.0 )
+( cd ../contrib/vector && git checkout v0.12.3.0 )
 
 fixup_cabal() {
 	local type="$1"
@@ -38,6 +39,7 @@ copy_and_rename() {
 	local type="$2"
 	local path_r="$3"
 	local excludes="$4"
+	if [ "$#" -lt 4 ]; then shift 3; else shift 4; fi
 
 	local path_l="Data/Strict/$type/Autogen"
 
@@ -46,7 +48,15 @@ copy_and_rename() {
 	cat /dev/null | fixup_cabal "$type"
 	test -z "$CLEAN" || return 0
 
-	cp -a ../contrib/"$pkg/${path_r}"/* "src/${path_l}/"
+	local includes=( "${@:-*.hs}" )
+	local findexpr=( -false ); for((i=0;i<${#includes[@]};i++)); do findexpr+=( -o -path "./${path_r}/${includes[i]}" ); done
+	#echo >&2 cd ../contrib/"$pkg/" '&&' find . "${findexpr[@]}"
+	( cd ../contrib/"$pkg/" && find . "${findexpr[@]}" ) | while read found; do
+		local f="${found#./${path_r}/}"
+		mkdir -p "$(dirname "src/${path_l}/$f")"
+		#echo >&2 "${f}"
+		cp -a ../contrib/"$pkg/${path_r}/$f" "src/${path_l}/$f"
+	done
 	if [ -f ../contrib/"$pkg/${path_r}.hs" ]; then
 		cp -a ../contrib/"$pkg/${path_r}.hs" "src/${path_l}.hs"
 	fi
@@ -98,6 +108,7 @@ rename_modules Utils/Containers/Internal Data/Strict/ContainersUtils/Autogen \
 copy_and_rename containers/containers/src Sequence Data/Sequence "/Internal/sorting.md"
 rename_modules Utils/Containers/Internal Data/Strict/ContainersUtils/Autogen \
   src/Data/Strict/Sequence/Autogen.hs* src/Data/Strict/Sequence/Autogen/**/*.hs
+copy_and_rename vector Vector Data/Vector "" Mutable.hs
 
 rm -rf tests && mkdir -p tests
 if [ -z "$CLEAN" ]; then

@@ -1,0 +1,71 @@
+Similar to HashMap, Vector internally uses a primitive Array# which we can't
+add ! annotations to. Luckily they provide a hook `elemseq` that (in theory)
+allows you to easily make all operations strict, assuming vector implemented
+the usage of this perfectly in Data.Vector.Generic.
+
+This is again not ideal - the purpose of this package is to use datatype !
+annotations - but is the best that we can do for now. There remains a small
+chance that elemseq is not used perfectly in vector; if you spot any leaks
+please file us a bug and we'll work with the vector maintainers to fix it.
+
+For more discussion see https://github.com/haskell/vector/issues/380
+
+We also re-format the data definitions due to https://github.com/haskell/haddock/issues/836
+vector upstream CI doesn't run haddock so they don't see this issue themselves
+
+--- a/src/Data/Strict/Vector/Autogen.hs
++++ b/src/Data/Strict/Vector/Autogen.hs
+@@ -175,8 +175,8 @@
+ 
+ import Data.Strict.Vector.Autogen.Mutable  ( MVector(..) )
+ import Data.Primitive.Array
+-import qualified Data.Strict.Vector.Autogen.Fusion.Bundle as Bundle
+-import qualified Data.Strict.Vector.Autogen.Generic as G
++import qualified Data.Vector.Fusion.Bundle as Bundle
++import qualified Data.Vector.Generic as G
+ 
+ import Control.DeepSeq ( NFData(rnf)
+ #if MIN_VERSION_deepseq(1,4,3)
+@@ -232,9 +232,7 @@
+ 
+ 
+ -- | Boxed vectors, supporting efficient slicing.
+-data Vector a = Vector {-# UNPACK #-} !Int
+-                       {-# UNPACK #-} !Int
+-                       {-# UNPACK #-} !(Array a)
++data Vector a = Vector {-# UNPACK #-} !Int {-# UNPACK #-} !Int {-# UNPACK #-} !(Array a)
+         deriving ( Typeable )
+ 
+ liftRnfV :: (a -> ()) -> Vector a -> ()
+@@ -306,6 +304,9 @@
+   basicUnsafeCopy (MVector i n dst) (Vector j _ src)
+     = copyArray dst i src j n
+ 
++  {-# INLINE elemseq #-}
++  elemseq _ = seq
++
+ -- See http://trac.haskell.org/vector/ticket/12
+ instance Eq a => Eq (Vector a) where
+   {-# INLINE (==) #-}
+--- a/src/Data/Strict/Vector/Autogen/Mutable.hs
++++ b/src/Data/Strict/Vector/Autogen/Mutable.hs
+@@ -62,7 +62,7 @@
+ ) where
+ 
+ import           Control.Monad (when, liftM)
+-import qualified Data.Strict.Vector.Autogen.Generic.Mutable as G
++import qualified Data.Vector.Generic.Mutable as G
+ import           Data.Primitive.Array
+ import           Control.Monad.Primitive
+ 
+@@ -76,9 +76,7 @@
+ 
+ 
+ -- | Mutable boxed vectors keyed on the monad they live in ('IO' or @'ST' s@).
+-data MVector s a = MVector {-# UNPACK #-} !Int                -- ^ Offset in underlying array
+-                           {-# UNPACK #-} !Int                -- ^ Size of slice
+-                           {-# UNPACK #-} !(MutableArray s a) -- ^ Underlying array
++data MVector s a = MVector {-# UNPACK #-} !Int {-# UNPACK #-} !Int {-# UNPACK #-} !(MutableArray s a)
+         deriving ( Typeable )
+ 
+ type IOVector = MVector RealWorld

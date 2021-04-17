@@ -13,6 +13,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Strict.HashMap as HashMap
 import qualified Data.Strict.Map as Map
 import qualified Data.Strict.Sequence as Sequence
+import qualified Data.Strict.Vector as Vector
 
 
 -- code copied from serialise
@@ -67,3 +68,9 @@ instance (Serialise a) => Serialise (Sequence.Seq a) where
              decodeListLen
              Sequence.replicateM
              mconcat
+
+instance (Serialise a) => Serialise (Vector.Vector a) where
+  encode = encodeVector
+  {-# INLINE encode #-}
+  decode = decodeVector
+  {-# INLINE decode #-}
