@@ -1,4 +1,6 @@
-# 0.1
+# Revision history for strict-containers
 
-- Initial release, defining strict versions of
-  `Data.Sequence`, `Data.Map` and `Data.HashMap`.
+## 0.1 -- UNRELEASED
+
+- Initial release, defining strict versions of `Data.HashMap`, `Data.Map`,
+  `Data.Sequence`, and `Data.Vector`.
