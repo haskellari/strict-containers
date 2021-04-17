@@ -4,7 +4,7 @@ Synopsis:       Strict containers.
 Category:       Data, Data Structures
 Description:
   This package provides strict versions of some standard Haskell containers -
-  including 'Sequence', 'Map' and 'HashMap'.
+  including 'HashMap', 'IntMap', 'Map', 'Sequence', and 'Vector'.
   .
   The reasoning is the same as that for our @strict@ package - though some
   containers already define strict /operations/ that force their inputs, the

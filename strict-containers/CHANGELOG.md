@@ -2,5 +2,5 @@
 
 ## 0.1 -- UNRELEASED
 
-- Initial release, defining strict versions of `Data.HashMap`, `Data.Map`,
-  `Data.Sequence`, and `Data.Vector`.
+- Initial release, defining strict versions of `Data.HashMap`, `Data.IntMap`,
+  `Data.Map`, `Data.Sequence`, and `Data.Vector`.
