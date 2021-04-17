@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE BangPatterns #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Main (main) where
@@ -13,7 +15,7 @@ import Test.HUnit hiding (Test)
 import Data.Strict.IntMap.Autogen.Strict (IntMap)
 import qualified Data.Strict.IntMap.Autogen.Strict as M
 import qualified Data.IntMap.Lazy as L
-import Data.Containers.ListUtils
+import qualified Data.IntSet as IntSet
 
 import Utils.IsUnit
 
@@ -90,7 +92,7 @@ pInsertLookupWithKeyValueStrict f k v m
 -- also https://github.com/haskell/containers/issues/473
 
 pFromAscListLazy :: [Int] -> Bool
-pFromAscListLazy ks = not . isBottom $ M.fromAscList elems
+pFromAscListLazy ks = not . isBottom $ L.fromAscList elems
   where
     elems = [(k, v) | k <- nubInt ks, v <- [undefined, ()]]
 
@@ -100,6 +102,25 @@ pFromAscListStrict ks
     | otherwise = isBottom $ M.fromAscList elems
   where
     elems = [(k, v) | k <- nubInt ks, v <- [undefined, undefined, ()]]
+
+-- copy over definitions from Data.Containers.Utils so we can support older GHC
+-- that have older versions of containers without this module
+nubInt :: [Int] -> [Int]
+nubInt = nubIntOn id
+{-# INLINE nubInt #-}
+
+nubIntOn :: (a -> Int) -> [a] -> [a]
+nubIntOn f = \xs -> nubIntOnExcluding f IntSet.empty xs
+{-# INLINE nubIntOn #-}
+
+nubIntOnExcluding :: (a -> Int) -> IntSet.IntSet -> [a] -> [a]
+nubIntOnExcluding f = go
+  where
+    go _ [] = []
+    go s (x:xs)
+      | fx `IntSet.member` s = go s xs
+      | otherwise = x : go (IntSet.insert fx s) xs
+      where !fx = f x
 
 ------------------------------------------------------------------------
 -- check for extra thunks
@@ -141,7 +162,10 @@ tExtraThunksL = testGroup "IntMap.Strict - extra thunks" $
     , check "insertWith"      False $ L.insertWith const 42 () m0
     , check "fromList"        True  $ L.fromList [(42,()),(42,())]
     , check "fromListWith"    False $ L.fromListWith const [(42,()),(42,())]
+#if MIN_VERSION_containers(0,6,3)
+    -- see https://github.com/haskell/containers/issues/473
     , check "fromAscList"     True  $ L.fromAscList [(42,()),(42,())]
+#endif
     , check "fromAscListWith" False $ L.fromAscListWith const [(42,()),(42,())]
     , check "fromDistinctAscList" True $ L.fromAscList [(42,())]
     ]

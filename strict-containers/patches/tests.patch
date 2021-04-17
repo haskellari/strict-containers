@@ -235,16 +235,68 @@
  import qualified Data.Vector.Storable as DVS
 --- a/tests/intmap-strictness.hs
 +++ b/tests/intmap-strictness.hs
-@@ -12,7 +12,7 @@
+@@ -1,3 +1,5 @@
++{-# LANGUAGE CPP #-}
++{-# LANGUAGE BangPatterns #-}
+ {-# OPTIONS_GHC -fno-warn-orphans #-}
+ 
+ module Main (main) where
+@@ -12,8 +14,8 @@
  
  import Data.Strict.IntMap.Autogen.Strict (IntMap)
  import qualified Data.Strict.IntMap.Autogen.Strict as M
 -import qualified Data.Strict.IntMap.Autogen as L
+-import Data.Containers.ListUtils
 +import qualified Data.IntMap.Lazy as L
- import Data.Containers.ListUtils
++import qualified Data.IntSet as IntSet
  
  import Utils.IsUnit
-@@ -147,7 +147,7 @@
+ 
+@@ -90,7 +92,7 @@
+ -- also https://github.com/haskell/containers/issues/473
+ 
+ pFromAscListLazy :: [Int] -> Bool
+-pFromAscListLazy ks = not . isBottom $ M.fromAscList elems
++pFromAscListLazy ks = not . isBottom $ L.fromAscList elems
+   where
+     elems = [(k, v) | k <- nubInt ks, v <- [undefined, ()]]
+ 
+@@ -101,6 +103,25 @@
+   where
+     elems = [(k, v) | k <- nubInt ks, v <- [undefined, undefined, ()]]
+ 
++-- copy over definitions from Data.Containers.Utils so we can support older GHC
++-- that have older versions of containers without this module
++nubInt :: [Int] -> [Int]
++nubInt = nubIntOn id
++{-# INLINE nubInt #-}
++
++nubIntOn :: (a -> Int) -> [a] -> [a]
++nubIntOn f = \xs -> nubIntOnExcluding f IntSet.empty xs
++{-# INLINE nubIntOn #-}
++
++nubIntOnExcluding :: (a -> Int) -> IntSet.IntSet -> [a] -> [a]
++nubIntOnExcluding f = go
++  where
++    go _ [] = []
++    go s (x:xs)
++      | fx `IntSet.member` s = go s xs
++      | otherwise = x : go (IntSet.insert fx s) xs
++      where !fx = f x
++
+ ------------------------------------------------------------------------
+ -- check for extra thunks
+ --
+@@ -141,13 +162,16 @@
+     , check "insertWith"      False $ L.insertWith const 42 () m0
+     , check "fromList"        True  $ L.fromList [(42,()),(42,())]
+     , check "fromListWith"    False $ L.fromListWith const [(42,()),(42,())]
++#if MIN_VERSION_containers(0,6,3)
++    -- see https://github.com/haskell/containers/issues/473
+     , check "fromAscList"     True  $ L.fromAscList [(42,()),(42,())]
++#endif
+     , check "fromAscListWith" False $ L.fromAscListWith const [(42,()),(42,())]
+     , check "fromDistinctAscList" True $ L.fromAscList [(42,())]
      ]
    where
      m0 = L.singleton 42 ()
