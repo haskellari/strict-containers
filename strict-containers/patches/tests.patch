@@ -118,7 +118,7 @@
  import qualified Data.Vector.Unboxed as Unboxed
 --- a/strict-containers.cabal
 +++ b/strict-containers.cabal
-@@ -134,12 +134,13 @@
+@@ -146,12 +146,13 @@
    hs-source-dirs:   tests
    main-is:          map-properties.hs
    type:             exitcode-stdio-1.0
@@ -133,7 +133,7 @@
    ghc-options:      -O2
    other-extensions:
      BangPatterns
-@@ -158,7 +159,7 @@
+@@ -170,7 +171,7 @@
    hs-source-dirs:   tests
    main-is:          map-strictness.hs
    type:             exitcode-stdio-1.0
@@ -142,7 +142,34 @@
    build-depends:
        array                       >=0.4.0.0
      , base                        >=4.6     && <5
-@@ -183,7 +184,7 @@
+@@ -197,7 +198,7 @@
+   type:             exitcode-stdio-1.0
+   cpp-options:      -DSTRICT
+   other-modules:    IntMapValidity
+-  build-depends:    containers-tests
++  build-depends:    strict-containers
+   build-depends:
+       array    >=0.4.0.0
+     , base     >=4.6     && <5
+@@ -208,7 +209,7 @@
+     BangPatterns
+     CPP
+ 
+-  build-depends:    containers-tests
++  build-depends:    containers, strict-containers
+   build-depends:
+       HUnit
+     , QuickCheck                  >=2.7.1
+@@ -225,7 +226,7 @@
+     BangPatterns
+     CPP
+ 
+-  build-depends:    containers-tests
++  build-depends:    containers, strict-containers
+   build-depends:
+       array                       >=0.4.0.0
+     , base                        >=4.6     && <5
+@@ -247,7 +248,7 @@
    hs-source-dirs:   tests
    main-is:          seq-properties.hs
    type:             exitcode-stdio-1.0
@@ -151,7 +178,7 @@
    build-depends:
        array    >=0.4.0.0
      , base     >=4.6     && <5
-@@ -212,6 +213,7 @@
+@@ -276,6 +277,7 @@
      QuickCheck >= 2.4.0.1,
      test-framework >= 0.3.3,
      test-framework-quickcheck2 >= 0.2.9,
@@ -159,7 +186,7 @@
      unordered-containers
  
    default-language: Haskell2010
-@@ -221,7 +223,7 @@
+@@ -285,7 +287,7 @@
  test-suite vector-tests-O0
    Default-Language: Haskell2010
    type: exitcode-stdio-1.0
@@ -168,7 +195,7 @@
  
    other-modules: Boilerplater
                   Tests.Bundle
-@@ -229,14 +231,11 @@
+@@ -293,14 +295,11 @@
                   Tests.Vector
                   Tests.Vector.Property
                   Tests.Vector.Boxed
@@ -184,7 +211,7 @@
                   primitive, random,
                   QuickCheck >= 2.9 && < 2.15, HUnit, tasty,
                   tasty-hunit, tasty-quickcheck,
-@@ -257,10 +256,5 @@
+@@ -321,10 +320,5 @@
    Ghc-Options: -O0 -threaded
    Ghc-Options: -Wall
  
@@ -206,3 +233,23 @@
  import qualified Data.Vector.Generic as DVG
  import qualified Data.Vector.Primitive as DVP
  import qualified Data.Vector.Storable as DVS
+--- a/tests/intmap-strictness.hs
++++ b/tests/intmap-strictness.hs
+@@ -12,7 +12,7 @@
+ 
+ import Data.Strict.IntMap.Autogen.Strict (IntMap)
+ import qualified Data.Strict.IntMap.Autogen.Strict as M
+-import qualified Data.Strict.IntMap.Autogen as L
++import qualified Data.IntMap.Lazy as L
+ import Data.Containers.ListUtils
+ 
+ import Utils.IsUnit
+@@ -147,7 +147,7 @@
+     ]
+   where
+     m0 = L.singleton 42 ()
+-    check :: TestName -> Bool -> IntMap () -> Test
++    check :: TestName -> Bool -> L.IntMap () -> Test
+     check n e m = testCase n $ case L.lookup 42 m of
+         Just v -> assertBool msg (e == isUnit v)
+         _      -> assertString "key not found"

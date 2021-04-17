@@ -1,7 +1,7 @@
 {- | Fully-strict version of "Data.Vector"
 
 Unlike "Data.Vector" t'Data.Vector.Vector' the instances of our {- haddock
-#1251 -} t'Data.Strict.Vector.Vector' are all strict as well.
+ #1251 -} t'Data.Strict.Vector.Vector' are all strict as well.
 
 You should be able to switch from the former simply by changing your module
 imports, and your package dependency from @vector@ to @strict-containers@.

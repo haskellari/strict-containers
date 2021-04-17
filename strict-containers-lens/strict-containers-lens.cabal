@@ -35,6 +35,7 @@ library
   exposed-modules:
     Data.Strict.Containers.Lens
     Data.Strict.HashMap.Lens
+    Data.Strict.IntMap.Lens
     Data.Strict.Map.Lens
     Data.Strict.Sequence.Lens
     Data.Strict.Vector.Lens

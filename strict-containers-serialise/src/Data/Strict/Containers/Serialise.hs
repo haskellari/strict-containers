@@ -11,6 +11,7 @@ import           Data.Semigroup (Semigroup (..)) -- helps with compatibility
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Strict.HashMap as HashMap
+import qualified Data.Strict.IntMap as IntMap
 import qualified Data.Strict.Map as Map
 import qualified Data.Strict.Sequence as Sequence
 import qualified Data.Strict.Vector as Vector
@@ -57,6 +58,10 @@ instance (Serialise k, Hashable k, Eq k, Serialise v) =>
   Serialise (HashMap.HashMap k v) where
   encode = encodeMapSkel HashMap.size HashMap.foldrWithKey
   decode = decodeMapSkel HashMap.fromList
+
+instance (Serialise a) => Serialise (IntMap.IntMap a) where
+  encode = encodeMapSkel IntMap.size IntMap.foldrWithKey
+  decode = decodeMapSkel IntMap.fromList
 
 instance (Serialise a) => Serialise (Sequence.Seq a) where
   encode = encodeContainerSkel

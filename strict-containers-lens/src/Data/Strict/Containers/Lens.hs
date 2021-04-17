@@ -3,7 +3,8 @@ module Data.Strict.Containers.Lens
   (
   ) where
 
-import           Data.Strict.Map.Lens ()
 import           Data.Strict.HashMap.Lens ()
+import           Data.Strict.IntMap.Lens ()
+import           Data.Strict.Map.Lens ()
 import           Data.Strict.Sequence.Lens ()
 import           Data.Strict.Vector.Lens ()

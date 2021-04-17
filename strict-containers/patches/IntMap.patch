@@ -1,0 +1,11 @@
+--- a/src/Data/Strict/IntMap/Autogen/Internal.hs
++++ b/src/Data/Strict/IntMap/Autogen/Internal.hs
+@@ -379,7 +379,7 @@
+ --            the left of the Mask bit.
+ -- Invariant: In (Bin prefix mask left right), left consists of the elements that
+ --            don't have the mask bit set; right is all the elements that do.
+-              | Tip {-# UNPACK #-} !Key a
++              | Tip {-# UNPACK #-} !Key !a
+               | Nil
+ 
+ type Prefix = Int

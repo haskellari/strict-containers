@@ -104,6 +104,9 @@ copy_and_rename containers/containers/src ContainersUtils Utils/Containers/Inter
 copy_and_rename containers/containers/src Map Data/Map ".hs /Lazy.hs /Merge/Lazy.hs /Lazy/Internal.hs"
 rename_modules Utils/Containers/Internal Data/Strict/ContainersUtils/Autogen \
   src/Data/Strict/Map/Autogen.hs* src/Data/Strict/Map/Autogen/**/*.hs
+copy_and_rename containers/containers/src IntMap Data/IntMap ".hs /Lazy.hs /Merge/Lazy.hs /Lazy/Internal.hs"
+rename_modules Utils/Containers/Internal Data/Strict/ContainersUtils/Autogen \
+  src/Data/Strict/IntMap/Autogen.hs* src/Data/Strict/IntMap/Autogen/**/*.hs
 copy_and_rename containers/containers/src Sequence Data/Sequence "/Internal/sorting.md"
 rename_modules Utils/Containers/Internal Data/Strict/ContainersUtils/Autogen \
   src/Data/Strict/Sequence/Autogen.hs* src/Data/Strict/Sequence/Autogen/**/*.hs
@@ -116,7 +119,12 @@ if [ -z "$CLEAN" ]; then
 	export TESTS_CABAL=tests.cabal.in
 	copy_test_and_rename containers/containers-tests tests/map-properties.hs map-strict-properties Data/Map Data/Strict/Map/Autogen
 	copy_test_and_rename containers/containers-tests tests/map-strictness.hs map-strictness-properties Data/Map Data/Strict/Map/Autogen
+	copy_test_and_rename containers/containers-tests tests/intmap-properties.hs intmap-strict-properties Data/IntMap Data/Strict/IntMap/Autogen
+	copy_test_and_rename containers/containers-tests tests/intmap-strictness.hs intmap-strictness-properties Data/IntMap Data/Strict/IntMap/Autogen
 	copy_test_and_rename containers/containers-tests tests/seq-properties.hs seq-properties Data/Sequence Data/Strict/Sequence/Autogen
+	cp -a ../contrib/containers/containers-tests/tests/IntMapValidity.hs tests
+	rename_modules Data/IntMap Data/Strict/IntMap/Autogen tests/IntMapValidity.hs
+	rename_modules Utils/Containers/Internal Data/Strict/ContainersUtils/Autogen tests/IntMapValidity.hs
 	copy_test_and_rename unordered-containers tests/HashMapProperties.hs hashmap-strict-properties Data/HashMap Data/Strict/HashMap/Autogen
 	copy_test_and_rename vector tests/Main.hs vector-tests-O0 XXX XXX
 	mv tests/Main.hs tests/VectorMain.hs
