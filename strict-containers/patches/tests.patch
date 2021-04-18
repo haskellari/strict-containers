@@ -118,7 +118,7 @@
  import qualified Data.Vector.Unboxed as Unboxed
 --- a/strict-containers.cabal
 +++ b/strict-containers.cabal
-@@ -146,12 +146,13 @@
+@@ -155,12 +155,13 @@
    hs-source-dirs:   tests
    main-is:          map-properties.hs
    type:             exitcode-stdio-1.0
@@ -133,7 +133,7 @@
    ghc-options:      -O2
    other-extensions:
      BangPatterns
-@@ -170,7 +171,7 @@
+@@ -179,7 +180,7 @@
    hs-source-dirs:   tests
    main-is:          map-strictness.hs
    type:             exitcode-stdio-1.0
@@ -142,7 +142,7 @@
    build-depends:
        array                       >=0.4.0.0
      , base                        >=4.6     && <5
-@@ -197,7 +198,7 @@
+@@ -206,7 +207,7 @@
    type:             exitcode-stdio-1.0
    cpp-options:      -DSTRICT
    other-modules:    IntMapValidity
@@ -151,7 +151,7 @@
    build-depends:
        array    >=0.4.0.0
      , base     >=4.6     && <5
-@@ -208,7 +209,7 @@
+@@ -217,7 +218,7 @@
      BangPatterns
      CPP
  
@@ -160,7 +160,7 @@
    build-depends:
        HUnit
      , QuickCheck                  >=2.7.1
-@@ -225,7 +226,7 @@
+@@ -234,7 +235,7 @@
      BangPatterns
      CPP
  
@@ -169,7 +169,7 @@
    build-depends:
        array                       >=0.4.0.0
      , base                        >=4.6     && <5
-@@ -247,7 +248,7 @@
+@@ -256,7 +257,7 @@
    hs-source-dirs:   tests
    main-is:          seq-properties.hs
    type:             exitcode-stdio-1.0
@@ -178,7 +178,7 @@
    build-depends:
        array    >=0.4.0.0
      , base     >=4.6     && <5
-@@ -276,6 +277,7 @@
+@@ -285,6 +286,7 @@
      QuickCheck >= 2.4.0.1,
      test-framework >= 0.3.3,
      test-framework-quickcheck2 >= 0.2.9,
@@ -186,7 +186,7 @@
      unordered-containers
  
    default-language: Haskell2010
-@@ -285,7 +287,7 @@
+@@ -294,7 +296,7 @@
  test-suite vector-tests-O0
    Default-Language: Haskell2010
    type: exitcode-stdio-1.0
@@ -195,7 +195,7 @@
  
    other-modules: Boilerplater
                   Tests.Bundle
-@@ -293,14 +295,11 @@
+@@ -302,14 +304,11 @@
                   Tests.Vector
                   Tests.Vector.Property
                   Tests.Vector.Boxed
@@ -211,7 +211,7 @@
                   primitive, random,
                   QuickCheck >= 2.9 && < 2.15, HUnit, tasty,
                   tasty-hunit, tasty-quickcheck,
-@@ -321,10 +320,5 @@
+@@ -330,10 +329,5 @@
    Ghc-Options: -O0 -threaded
    Ghc-Options: -Wall
  

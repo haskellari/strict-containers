@@ -5,9 +5,12 @@
 set -e
 shopt -s nullglob globstar
 
-( cd ../contrib/containers && git checkout v0.6.4.1 )
-( cd ../contrib/unordered-containers && git checkout v0.2.13.0 )
-( cd ../contrib/vector && git checkout v0.12.3.0 )
+ensure_checkout() {
+	local pkg="$1"
+	local ver="$2"
+	( cd ../contrib/"$pkg" && git checkout "$ver" )
+	echo "  * $pkg $ver" >> "$VERSIONS_CABAL"
+}
 
 fixup_cabal() {
 	local type="$1"
@@ -92,6 +95,18 @@ copy_test_and_rename() {
 	  get_section "^[a-zA-Z][-a-zA-Z]* \?" "$testname" >> "$TESTS_CABAL"
 }
 
+if [ -z "$CLEAN" ]; then
+	VERSIONS_CABAL=versions.cabal.in
+	rm -f $VERSIONS_CABAL
+	ensure_checkout containers v0.6.4.1
+	ensure_checkout unordered-containers v0.2.13.0
+	ensure_checkout vector v0.12.3.0
+	cat $VERSIONS_CABAL | fixup_cabal versions ""
+	rm -f $VERSIONS_CABAL
+else
+	cat /dev/null | fixup_cabal versions
+fi
+
 copy_and_rename unordered-containers HashMap Data/HashMap "/Lazy.hs /Internal/Lazy.hs"
 rm -rf include && mkdir -p include
 if [ -z "$CLEAN" ]; then
@@ -115,8 +130,8 @@ copy_and_rename vector Vector Data/Vector "" Mutable.hs
 rm -rf tests && mkdir -p tests
 if [ -z "$CLEAN" ]; then
 	cp -a ../contrib/containers/containers-tests/tests/Utils tests/
-	rm -f tests.cabal.in
-	export TESTS_CABAL=tests.cabal.in
+	TESTS_CABAL=tests.cabal.in
+	rm -f "$TESTS_CABAL"
 	copy_test_and_rename containers/containers-tests tests/map-properties.hs map-strict-properties Data/Map Data/Strict/Map/Autogen
 	copy_test_and_rename containers/containers-tests tests/map-strictness.hs map-strictness-properties Data/Map Data/Strict/Map/Autogen
 	copy_test_and_rename containers/containers-tests tests/intmap-properties.hs intmap-strict-properties Data/IntMap Data/Strict/IntMap/Autogen
@@ -131,9 +146,8 @@ if [ -z "$CLEAN" ]; then
 	cp -a ../contrib/vector/tests/{Tests,Boilerplater.hs,Utilities.hs} tests
 	rm -f tests/Tests/Vector/{Primitive,Unboxed,Storable}.hs
 
-	cat tests.cabal.in | fixup_cabal tests ""
-	export -n TESTS_CABAL
-	rm -f tests.cabal.in
+	cat "$TESTS_CABAL" | fixup_cabal tests ""
+	rm -f "$TESTS_CABAL"
 	patch -p1 < "patches/tests.patch"
 else
 	cat /dev/null | fixup_cabal tests ""
