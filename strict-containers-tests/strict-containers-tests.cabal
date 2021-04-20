@@ -1,5 +1,5 @@
 Name:           strict-containers-tests
-Version:        0.1
+Version:        0.1.1
 Synopsis:       Strict containers - test suite
 Category:       Data, Data Structures, Tests
 Description:    Test suite for @strict-containers@.
