@@ -89,10 +89,11 @@ copy_test_and_rename() {
 	local testname="$3"
 	local path_r="$4"
 	local path_l="$5"
-	cp -d --preserve=all "../contrib/$pkg/$test" tests/
-	rename_modules "$path_r" "$path_l" tests/"$(basename "$test")"
+	cp -d --preserve=all "../contrib/$pkg/$test" "$TESTDIR"/
+	rename_modules "$path_r" "$path_l" "$TESTDIR"/"$(basename "$test")"
 	cat "../contrib/$pkg"/*.cabal | \
-	  get_section "^[a-zA-Z][-a-zA-Z]* \?" "$testname" >> "$TESTS_CABAL"
+	  get_section "^[a-zA-Z][-a-zA-Z]* \?" "$testname" |
+	  sed -re 's,hs-source-dirs:( *)tests,hs-source-dirs:\1'"$TESTDIR"',g' >> "$TESTS_CABAL"
 }
 
 if [ -z "$CLEAN" ]; then
@@ -127,9 +128,11 @@ rename_modules Utils/Containers/Internal Data/Strict/ContainersUtils/Autogen \
   src/Data/Strict/Sequence/Autogen.hs* src/Data/Strict/Sequence/Autogen/**/*.hs
 copy_and_rename vector Vector Data/Vector "" Mutable.hs
 
-rm -rf tests && mkdir -p tests
+TESTDIR=tests
+
+rm -rf "$TESTDIR" && mkdir -p "$TESTDIR"
 if [ -z "$CLEAN" ]; then
-	cp -a ../contrib/containers/containers-tests/tests/Utils tests/
+	cp -a ../contrib/containers/containers-tests/tests/Utils "$TESTDIR"
 	TESTS_CABAL=tests.cabal.in
 	rm -f "$TESTS_CABAL"
 	copy_test_and_rename containers/containers-tests tests/map-properties.hs map-strict-properties Data/Map Data/Strict/Map/Autogen
@@ -137,14 +140,14 @@ if [ -z "$CLEAN" ]; then
 	copy_test_and_rename containers/containers-tests tests/intmap-properties.hs intmap-strict-properties Data/IntMap Data/Strict/IntMap/Autogen
 	copy_test_and_rename containers/containers-tests tests/intmap-strictness.hs intmap-strictness-properties Data/IntMap Data/Strict/IntMap/Autogen
 	copy_test_and_rename containers/containers-tests tests/seq-properties.hs seq-properties Data/Sequence Data/Strict/Sequence/Autogen
-	cp -a ../contrib/containers/containers-tests/tests/IntMapValidity.hs tests
-	rename_modules Data/IntMap Data/Strict/IntMap/Autogen tests/IntMapValidity.hs
-	rename_modules Utils/Containers/Internal Data/Strict/ContainersUtils/Autogen tests/IntMapValidity.hs
+	cp -a ../contrib/containers/containers-tests/tests/IntMapValidity.hs "$TESTDIR"
+	rename_modules Data/IntMap Data/Strict/IntMap/Autogen "$TESTDIR"/IntMapValidity.hs
+	rename_modules Utils/Containers/Internal Data/Strict/ContainersUtils/Autogen "$TESTDIR"/IntMapValidity.hs
 	copy_test_and_rename unordered-containers tests/HashMapProperties.hs hashmap-strict-properties Data/HashMap Data/Strict/HashMap/Autogen
 	copy_test_and_rename vector tests/Main.hs vector-tests-O0 XXX XXX
-	mv tests/Main.hs tests/VectorMain.hs
-	cp -a ../contrib/vector/tests/{Tests,Boilerplater.hs,Utilities.hs} tests
-	rm -f tests/Tests/Vector/{Primitive,Unboxed,Storable}.hs
+	mv "$TESTDIR"/Main.hs "$TESTDIR"/VectorMain.hs
+	cp -a ../contrib/vector/tests/{Tests,Boilerplater.hs,Utilities.hs} "$TESTDIR"
+	rm -f "$TESTDIR"/Tests/Vector/{Primitive,Unboxed,Storable}.hs
 
 	cat "$TESTS_CABAL" | fixup_cabal tests ""
 	rm -f "$TESTS_CABAL"
