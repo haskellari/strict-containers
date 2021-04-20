@@ -1,3 +1,4 @@
 packages: strict-containers/
 packages: strict-containers-lens/
 packages: strict-containers-serialise/
+packages: strict-containers-tests/

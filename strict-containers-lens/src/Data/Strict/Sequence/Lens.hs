@@ -45,9 +45,11 @@ instance TraversableWithIndex Int Seq where
 type instance Index (Seq a) = Int
 type instance IxValue (Seq a) = a
 instance Ixed (Seq a) where
-  ix i f m
-    | 0 <= i && i < Seq.length m = f (Seq.index m i) <&> \a -> Seq.update i a m
-    | otherwise                  = pure m
+  -- This is slightly different from lens' definition to make our ixTest work.
+  -- It is analogous to how Map.ix is defined.
+  ix i f m = case Seq.lookup i m of
+    Nothing -> pure m
+    Just v -> f v <&> \a -> Seq.update i a m
   {-# INLINE ix #-}
 
 instance AsEmpty (Seq a) where

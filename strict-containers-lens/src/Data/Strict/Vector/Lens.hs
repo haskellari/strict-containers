@@ -50,8 +50,14 @@ instance TraversableWithIndex Int Vector where
 type instance Index (Vector a) = Int
 type instance IxValue (Vector a) = a
 instance Ixed (Vector a) where
+  -- This is slightly different from lens' definition to make our ixTest work.
+  -- Unlike Sequence, since the element is stored inside a primitive array the
+  -- only way to get it is via a primop, so we have to force-apply ($!) the
+  -- extraction. Pattern matching on a case-expr (e.g. the result of V.!?) is
+  -- ineffective because that still has to call the primop, so we would still
+  -- have a thunk after pattern matching.
   ix i f v
-    | 0 <= i && i < V.length v = f (v V.! i) <&> \a -> v V.// [(i, a)]
+    | 0 <= i && i < V.length v = (f $! v V.! i) <&> \a -> v V.// [(i, a)]
     | otherwise                     = pure v
   {-# INLINE ix #-}
 

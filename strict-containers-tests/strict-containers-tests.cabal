@@ -1,0 +1,51 @@
+Name:           strict-containers-tests
+Version:        0.1
+Synopsis:       Strict containers - test suite
+Category:       Data, Data Structures, Tests
+Description:    Test suite for @strict-containers@.
+License:        BSD3
+License-File:   LICENSE
+Maintainer:     Ximin Luo <infinity0@pwned.gg>
+Copyright:      (c) 2021 by Ximin Luo
+Homepage:       https://github.com/haskellari/strict-containers
+Cabal-Version: >= 1.10
+Build-type:     Simple
+tested-with:
+  GHC ==8.2.2
+   || ==8.4.4
+   || ==8.6.5
+   || ==8.8.3
+   || ==8.10.4
+   || ==9.0.1
+
+test-suite strictness-tests
+  default-language: Haskell2010
+  hs-source-dirs:   .
+  main-is:          StrictTests.hs
+  type:             exitcode-stdio-1.0
+  build-depends:
+      strict-containers
+    , strict-containers-lens
+    , strict-containers-serialise
+    , base                  >=4.6       && <5
+    , binary                >= 0.8.4.1  && < 0.9
+    , binary-instances      >= 1        && < 2
+    , containers            >= 0.5.9.2  && < 0.7
+    , lens                  >= 4.19     && < 6
+    , unordered-containers  >= 0.2      && < 0.3
+    , serialise             >= 0.2.3.0  && < 0.3
+    , strict                >= 0.4      && < 0.5
+    , vector                >= 0.12     && < 0.13
+
+  if impl(ghc >= 8.6)
+    build-depends: ghc-heap
+  else
+    build-depends: ghc-heap-view
+
+  build-depends:
+      HUnit
+    , QuickCheck                  >=2.7.1
+    , tasty
+    , tasty-hunit
+    , tasty-quickcheck
+    , transformers
