@@ -28,7 +28,7 @@ library
 
   build-depends:
       base                  >= 4.5.0.0  && < 5
-    , hashable              >= 1.2.7.0  && < 1.4
+    , hashable              >= 1.2.7.0  && < 1.5
     , strict-containers     >= 0.1
     , lens                  >= 4.19     && < 6
 
