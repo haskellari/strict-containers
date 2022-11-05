@@ -1,5 +1,6 @@
+Cabal-Version:  2.2
 Name:           strict-containers
-Version:        0.1.1
+Version:        0.2
 Synopsis:       Strict containers.
 Category:       Data, Data Structures
 Description:
@@ -42,12 +43,11 @@ Description:
   * unordered-containers v0.2.13.0
   * vector v0.12.3.0
 -- DO NOT EDIT above, AUTOGEN versions
-License:        BSD3
+License:        BSD-3-Clause
 License-File:   LICENSE
 Maintainer:     Ximin Luo <infinity0@pwned.gg>
 Copyright:      (c) 2021 by Ximin Luo
 Homepage:       https://github.com/haskellari/strict-containers
-Cabal-Version: >= 1.10
 Build-type:     Simple
 extra-source-files:
     CHANGELOG.md
@@ -73,14 +73,15 @@ library
       base                    >= 4.5.0.0   && < 5
     , array                   >= 0.4.0.0
     , binary                  >= 0.8.4.1   && < 0.9
-    , containers              >= 0.5.9.2   && < 0.7
+    , containers              >= 0.6.6     && < 0.7
     , deepseq                 >= 1.2       && < 1.5
     , indexed-traversable     >= 0.1.1     && < 0.2
     , hashable                >= 1.2.7.0   && < 1.5
     , primitive               >= 0.6.4.0   && < 0.8
-    , unordered-containers    >= 0.2       && < 0.3
+    , unordered-containers    >= 0.2.19.1  && < 0.3
     , strict                  >= 0.4       && < 0.5
-    , vector                  >= 0.12.3.0  && < 0.13
+    , template-haskell
+    , vector                  >= 0.13.0.0  && < 0.14
     , vector-binary-instances >= 0.2.2.0   && < 0.3
 
   exposed-modules:

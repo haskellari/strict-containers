@@ -1,5 +1,5 @@
 Name:           strict-containers-tests
-Version:        0.1.1
+Version:        0.2
 Synopsis:       Strict containers - test suite
 Category:       Data, Data Structures, Tests
 Description:    Test suite for @strict-containers@.
@@ -28,15 +28,15 @@ test-suite strictness-tests
       strict-containers
     , strict-containers-lens
     , strict-containers-serialise
-    , base                  >=4.6       && <5
+    , base                  >= 4.6      && <5
     , binary                >= 0.8.4.1  && < 0.9
     , binary-instances      >= 1        && < 2
-    , containers            >= 0.5.9.2  && < 0.7
+    , containers            >= 0.6.6    && < 0.7
     , lens                  >= 4.19     && < 6
-    , unordered-containers  >= 0.2      && < 0.3
+    , unordered-containers  >= 0.2.19.1 && < 0.3
     , serialise             >= 0.2.3.0  && < 0.3
     , strict                >= 0.4      && < 0.5
-    , vector                >= 0.12     && < 0.13
+    , vector                >= 0.13.0.0 && < 0.14
 
   if impl(ghc >= 8.6)
     build-depends: ghc-heap

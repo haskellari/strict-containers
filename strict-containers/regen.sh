@@ -35,7 +35,9 @@ rename_modules() {
 
 	local mod_r="$(echo "${path_r}" | sed -e 's,/,\.,g')"
 	local mod_l="$(echo "${path_l}" | sed -e 's,/,.,g')"
-	sed -e 's/'"${mod_r}"'/'"${mod_l}"'/g' -i "$@"
+	if [ -n "$*" ]; then
+		sed -e 's/'"${mod_r}"'/'"${mod_l}"'/g' -i "$@"
+	fi
 }
 
 copy_and_rename() {
@@ -84,6 +86,17 @@ get_section() {
 	# corner cases all handled :)
 }
 
+grab_cabal_stanza() {
+	local pkg="$1"
+	local testprefix="${pkg%%/*}"
+	cat "../contrib/$pkg"/*.cabal |
+		get_section "$2" "$3" |
+		sed -re 's/containers-tests/strict-containers,containers/g' |
+		sed -re 's/^common\s*/\0'"${testprefix}"'-/g' |
+		sed -re 's/\s*import:\s*/\0'"${testprefix}"'-/g' \
+			>> "$TESTS_CABAL"
+}
+
 copy_test_and_rename() {
 	local pkg="$1"
 	local test="$2"
@@ -92,17 +105,15 @@ copy_test_and_rename() {
 	local path_l="$5"
 	cp -d --preserve=all "../contrib/$pkg/$test" "$TESTDIR"/
 	rename_modules "$path_r" "$path_l" "$TESTDIR"/"$(basename "$test")"
-	cat "../contrib/$pkg"/*.cabal | \
-	  get_section "^[a-zA-Z][-a-zA-Z]* \?" "$testname" |
-	  sed -re 's,hs-source-dirs:( *)tests,hs-source-dirs:\1'"$TESTDIR"',g' >> "$TESTS_CABAL"
+	grab_cabal_stanza "$pkg" "^[a-zA-Z][-a-zA-Z]* \?" "$testname"
 }
 
 if [ -z "$CLEAN" ]; then
 	VERSIONS_CABAL=versions.cabal.in
 	rm -f $VERSIONS_CABAL
-	ensure_checkout containers v0.6.4.1
-	ensure_checkout unordered-containers v0.2.13.0
-	ensure_checkout vector v0.12.3.0
+	ensure_checkout containers v0.6.6
+	ensure_checkout unordered-containers v0.2.19.1
+	ensure_checkout vector vector-0.13.0.0
 	cat $VERSIONS_CABAL | fixup_cabal versions ""
 	rm -f $VERSIONS_CABAL
 else
@@ -113,6 +124,7 @@ copy_and_rename unordered-containers HashMap Data/HashMap "/Lazy.hs /Internal/La
 rm -rf include && mkdir -p include
 if [ -z "$CLEAN" ]; then
 	cp -a ../contrib/containers/containers/include/* include/
+	cp -a ../contrib/vector/vector/include/* include/
 	find include -type f | fixup_cabal includes
 else
 	cat /dev/null | fixup_cabal includes
@@ -127,7 +139,7 @@ rename_modules Utils/Containers/Internal Data/Strict/ContainersUtils/Autogen \
 copy_and_rename containers/containers/src Sequence Data/Sequence "/Internal/sorting.md"
 rename_modules Utils/Containers/Internal Data/Strict/ContainersUtils/Autogen \
   src/Data/Strict/Sequence/Autogen.hs* src/Data/Strict/Sequence/Autogen/**/*.hs
-copy_and_rename vector Vector Data/Vector "" Mutable.hs
+copy_and_rename vector/vector/src Vector Data/Vector "" Mutable.hs Internal/Check.hs
 
 TESTDIR=tests
 
@@ -136,6 +148,9 @@ if [ -z "$CLEAN" ]; then
 	cp -a ../contrib/containers/containers-tests/tests/Utils "$TESTDIR"
 	TESTS_CABAL=tests.cabal.in
 	rm -f "$TESTS_CABAL"
+	for import in deps test-deps; do
+		grab_cabal_stanza containers/containers-tests "^common " "$import"
+	done
 	copy_test_and_rename containers/containers-tests tests/map-properties.hs map-strict-properties Data/Map Data/Strict/Map/Autogen
 	copy_test_and_rename containers/containers-tests tests/map-strictness.hs map-strictness-properties Data/Map Data/Strict/Map/Autogen
 	copy_test_and_rename containers/containers-tests tests/intmap-properties.hs intmap-strict-properties Data/IntMap Data/Strict/IntMap/Autogen
@@ -144,10 +159,10 @@ if [ -z "$CLEAN" ]; then
 	cp -a ../contrib/containers/containers-tests/tests/IntMapValidity.hs "$TESTDIR"
 	rename_modules Data/IntMap Data/Strict/IntMap/Autogen "$TESTDIR"/IntMapValidity.hs
 	rename_modules Utils/Containers/Internal Data/Strict/ContainersUtils/Autogen "$TESTDIR"/IntMapValidity.hs
-	copy_test_and_rename unordered-containers tests/HashMapProperties.hs hashmap-strict-properties Data/HashMap Data/Strict/HashMap/Autogen
-	copy_test_and_rename vector tests/Main.hs vector-tests-O0 XXX XXX
+	copy_test_and_rename unordered-containers tests/Properties/HashMapLazy.hs hashmap-strict-properties Data/HashMap Data/Strict/HashMap/Autogen
+	copy_test_and_rename vector/vector tests/Main.hs vector-tests-O0 XXX XXX
 	mv "$TESTDIR"/Main.hs "$TESTDIR"/VectorMain.hs
-	cp -a ../contrib/vector/tests/{Tests,Boilerplater.hs,Utilities.hs} "$TESTDIR"
+	cp -a ../contrib/vector/vector/tests/{Tests,Boilerplater.hs,Utilities.hs} "$TESTDIR"
 	rm -f "$TESTDIR"/Tests/Vector/{Primitive,Unboxed,Storable}.hs
 
 	cat "$TESTS_CABAL" | fixup_cabal tests ""
