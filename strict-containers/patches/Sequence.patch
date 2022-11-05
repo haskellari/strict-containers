@@ -12,9 +12,20 @@ in the Deep constructor.
 
 We also remove the lazy adjust function, and rename the strict adjust' to adjust.
 
---- a/src/Data/Strict/Sequence/Autogen/Internal.hs
-+++ b/src/Data/Strict/Sequence/Autogen/Internal.hs
-@@ -144,7 +144,6 @@
+diff --git a/src/Data/Strict/Sequence/Autogen.hs b/src/Data/Strict/Sequence/Autogen.hs
+index a4582dd..8cd1431 100644
+--- a/src/Data/Strict/Sequence/Autogen.hs
++++ b/src/Data/Strict/Sequence/Autogen.hs
+@@ -46,7 +46,7 @@
+ --     * Logarithmic-time concatenation with '><'
+ --     * Logarithmic-time splitting with 'splitAt', 'take' and 'drop'
+ --     * Logarithmic-time access to any element with
+---     'lookup', '!?', 'index', 'insertAt', 'deleteAt', 'adjust'', and 'update'
++--     'lookup', '!?', 'index', 'insertAt', 'deleteAt', 'adjust', and 'update'
+ --
+ --   Note that sequences are typically /slower/ than lists when using only
+ --   operations for which they have the same big-\(O\) complexity: sequences
+@@ -204,7 +204,6 @@ module Data.Strict.Sequence.Autogen (
      (!?),           -- :: Seq a -> Int -> Maybe a
      index,          -- :: Seq a -> Int -> a
      adjust,         -- :: (a -> a) -> Int -> Seq a -> Seq a
@@ -22,7 +33,19 @@ We also remove the lazy adjust function, and rename the strict adjust' to adjust
      update,         -- :: Int -> a -> Seq a -> Seq a
      take,           -- :: Int -> Seq a -> Seq a
      drop,           -- :: Int -> Seq a -> Seq a
-@@ -183,11 +182,9 @@
+diff --git a/src/Data/Strict/Sequence/Autogen/Internal.hs b/src/Data/Strict/Sequence/Autogen/Internal.hs
+index b026684..5c02404 100644
+--- a/src/Data/Strict/Sequence/Autogen/Internal.hs
++++ b/src/Data/Strict/Sequence/Autogen/Internal.hs
+@@ -148,7 +148,6 @@ module Data.Strict.Sequence.Autogen.Internal (
+     (!?),           -- :: Seq a -> Int -> Maybe a
+     index,          -- :: Seq a -> Int -> a
+     adjust,         -- :: (a -> a) -> Int -> Seq a -> Seq a
+-    adjust',        -- :: (a -> a) -> Int -> Seq a -> Seq a
+     update,         -- :: Int -> a -> Seq a -> Seq a
+     take,           -- :: Int -> Seq a -> Seq a
+     drop,           -- :: Int -> Seq a -> Seq a
+@@ -187,11 +186,9 @@ module Data.Strict.Sequence.Autogen.Internal (
      zipWith4,       -- :: (a -> b -> c -> d -> e) -> Seq a -> Seq b -> Seq c -> Seq d -> Seq e
      unzip,          -- :: Seq (a, b) -> (Seq a, Seq b)
      unzipWith,      -- :: (a -> (b, c)) -> Seq a -> (Seq b, Seq c)
@@ -34,7 +57,7 @@ We also remove the lazy adjust function, and rename the strict adjust' to adjust
      ) where
  
  import Prelude hiding (
-@@ -995,7 +992,7 @@
+@@ -998,7 +995,7 @@ seqDataType = mkDataType "Data.Strict.Sequence.Autogen.Seq" [emptyConstr, consCo
  
  data FingerTree a
      = EmptyT
@@ -43,7 +66,7 @@ We also remove the lazy adjust function, and rename the strict adjust' to adjust
      | Deep {-# UNPACK #-} !Int !(Digit a) (FingerTree (Node a)) !(Digit a)
  #ifdef TESTING
      deriving Show
-@@ -1184,10 +1181,10 @@
+@@ -1189,10 +1186,10 @@ pullR s pr m = case viewRTree m of
  -- Digits
  
  data Digit a
@@ -58,7 +81,7 @@ We also remove the lazy adjust function, and rename the strict adjust' to adjust
  #ifdef TESTING
      deriving Show
  #endif
-@@ -1287,8 +1284,8 @@
+@@ -1294,8 +1291,8 @@ digitToTree' !_n (One a) = Single a
  -- Nodes
  
  data Node a
@@ -69,7 +92,7 @@ We also remove the lazy adjust function, and rename the strict adjust' to adjust
  #ifdef TESTING
      deriving Show
  #endif
-@@ -2517,25 +2514,12 @@
+@@ -2511,25 +2508,12 @@ updateDigit v i (Four a b c d)
      sab     = sa + size b
      sabc    = sab + size c
  
@@ -96,19 +119,19 @@ We also remove the lazy adjust function, and rename the strict adjust' to adjust
  --  case xs !? i of
  --    Nothing -> xs
  --    Just x -> let !x' = f x
-@@ -2543,9 +2527,9 @@
+@@ -2537,9 +2521,9 @@ adjust f i (Seq xs)
  -- @
  --
  -- @since 0.5.8
 -adjust'          :: forall a . (a -> a) -> Int -> Seq a -> Seq a
 +adjust          :: forall a . (a -> a) -> Int -> Seq a -> Seq a
- #if __GLASGOW_HASKELL__ >= 708
+ #ifdef __GLASGOW_HASKELL__
 -adjust' f i xs
 +adjust f i xs
    -- See note on unsigned arithmetic in splitAt
    | fromIntegral i < (fromIntegral (length xs) :: Word) =
        coerce $ adjustTree (\ !_k (ForceBox a) -> ForceBox (f a)) i (coerce xs)
-@@ -2554,7 +2538,7 @@
+@@ -2548,7 +2532,7 @@ adjust' f i xs
  -- This is inefficient, but fixing it would take a lot of fuss and bother
  -- for little immediate gain. We can deal with that when we have another
  -- Haskell implementation to worry about.
@@ -117,22 +140,3 @@ We also remove the lazy adjust function, and rename the strict adjust' to adjust
    case xs !? i of
      Nothing -> xs
      Just x -> let !x' = f x
---- a/src/Data/Strict/Sequence/Autogen.hs
-+++ b/src/Data/Strict/Sequence/Autogen.hs
-@@ -46,7 +46,7 @@
- --     * Logarithmic-time concatenation with '><'
- --     * Logarithmic-time splitting with 'splitAt', 'take' and 'drop'
- --     * Logarithmic-time access to any element with
----     'lookup', '!?', 'index', 'insertAt', 'deleteAt', 'adjust'', and 'update'
-+--     'lookup', '!?', 'index', 'insertAt', 'deleteAt', 'adjust', and 'update'
- --
- --   Note that sequences are typically /slower/ than lists when using only
- --   operations for which they have the same big-\(O\) complexity: sequences
-@@ -204,7 +204,6 @@
-     (!?),           -- :: Seq a -> Int -> Maybe a
-     index,          -- :: Seq a -> Int -> a
-     adjust,         -- :: (a -> a) -> Int -> Seq a -> Seq a
--    adjust',        -- :: (a -> a) -> Int -> Seq a -> Seq a
-     update,         -- :: Int -> a -> Seq a -> Seq a
-     take,           -- :: Int -> Seq a -> Seq a
-     drop,           -- :: Int -> Seq a -> Seq a

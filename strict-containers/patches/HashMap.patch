@@ -7,25 +7,11 @@ element into (or replace an existing one in) an Array.
 
 For more discussion see https://github.com/haskell-unordered-containers/unordered-containers/issues/311
 
---- a/src/Data/Strict/HashMap/Autogen/Strict.hs
-+++ b/src/Data/Strict/HashMap/Autogen/Strict.hs
-@@ -99,13 +99,9 @@
-     , fromList
-     , fromListWith
-     , fromListWithKey
--
--      -- ** HashSets
--    , HS.keysSet
-     ) where
- 
- import Data.Strict.HashMap.Autogen.Internal.Strict as HM
--import qualified Data.HashSet.Internal as HS
- import Prelude ()
- 
- -- $strictness
+diff --git a/src/Data/Strict/HashMap/Autogen/Internal.hs b/src/Data/Strict/HashMap/Autogen/Internal.hs
+index 1cb01da..dfcae84 100644
 --- a/src/Data/Strict/HashMap/Autogen/Internal.hs
 +++ b/src/Data/Strict/HashMap/Autogen/Internal.hs
-@@ -194,7 +194,7 @@
+@@ -179,7 +179,7 @@ import qualified Language.Haskell.TH.Syntax  as TH
  hash :: H.Hashable a => a -> Hash
  hash = fromIntegral . H.hash
  
@@ -34,21 +20,23 @@ For more discussion see https://github.com/haskell-unordered-containers/unordere
    deriving (Eq)
  
  instance (NFData k, NFData v) => NFData (Leaf k v) where
+diff --git a/src/Data/Strict/HashMap/Autogen/Internal/Array.hs b/src/Data/Strict/HashMap/Autogen/Internal/Array.hs
+index 7c89f50..e789d17 100644
 --- a/src/Data/Strict/HashMap/Autogen/Internal/Array.hs
 +++ b/src/Data/Strict/HashMap/Autogen/Internal/Array.hs
-@@ -254,26 +254,30 @@
+@@ -197,15 +197,19 @@ liftRnfArray rnf0 ary0 = go ary0 n0 0
  -- state thread, with each element containing the specified initial
  -- value.
  new :: Int -> a -> ST s (MArray s a)
--new (I# n#) b =
+-new _n@(I# n#) b =
 +new i !b = new' i b
 +{-# INLINE new #-}
 +
 +new' :: Int -> a -> ST s (MArray s a)
-+new' (I# n#) b =
-     CHECK_GT("new",n,(0 :: Int))
++new' _n@(I# n#) b =
+     CHECK_GT("new",_n,(0 :: Int))
      ST $ \s ->
-         case newArray# n# b s of
+         case newSmallArray# n# b s of
              (# s', ary #) -> (# s', MArray ary #)
 -{-# INLINE new #-}
 +{-# INLINE new' #-}
@@ -56,6 +44,11 @@ For more discussion see https://github.com/haskell-unordered-containers/unordere
  new_ :: Int -> ST s (MArray s a)
 -new_ n = new n undefinedElem
 +new_ n = new' n undefinedElem
+ 
+ -- | When 'Exts.shrinkSmallMutableArray#' is available, the returned array is the same as the array given, as it is shrunk in place.
+ -- Otherwise a copy is made.
+@@ -222,11 +226,11 @@ shrink mary n = cloneM mary 0 n
+ {-# INLINE shrink #-}
  
  singleton :: a -> Array a
 -singleton x = runST (singletonM x)
@@ -67,18 +60,36 @@ For more discussion see https://github.com/haskell-unordered-containers/unordere
 +singletonM !x = new 1 x >>= unsafeFreeze
  {-# INLINE singletonM #-}
  
+ snoc :: Array a -> a -> Array a
+@@ -239,7 +243,7 @@ snoc ary x = run $ do
+ {-# INLINE snoc #-}
+ 
  pair :: a -> a -> Array a
 -pair x y = run $ do
 +pair !x !y = run $ do
      ary <- new 2 x
      write ary 1 y
      return ary
-@@ -286,7 +290,7 @@
+@@ -252,7 +256,7 @@ read ary _i@(I# i#) = ST $ \ s ->
  {-# INLINE read #-}
  
  write :: MArray s a -> Int -> a -> ST s ()
 -write ary _i@(I# i#) b = ST $ \ s ->
 +write ary _i@(I# i#) !b = ST $ \ s ->
      CHECK_BOUNDS("write", lengthM ary, _i)
-         case writeArray# (unMArray ary) i# b s of
+         case writeSmallArray# (unMArray ary) i# b s of
              s' -> (# s' , () #)
+diff --git a/src/Data/Strict/HashMap/Autogen/Strict.hs b/src/Data/Strict/HashMap/Autogen/Strict.hs
+index f40bf25..c1d2d04 100644
+--- a/src/Data/Strict/HashMap/Autogen/Strict.hs
++++ b/src/Data/Strict/HashMap/Autogen/Strict.hs
+@@ -100,9 +100,6 @@ module Data.Strict.HashMap.Autogen.Strict
+     , fromList
+     , fromListWith
+     , fromListWithKey
+-
+-      -- ** HashSets
+-    , HS.keysSet
+     ) where
+ 
+ import Data.Strict.HashMap.Autogen.Internal.Strict

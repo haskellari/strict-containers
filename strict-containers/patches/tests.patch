@@ -1,34 +1,3 @@
---- a/tests/seq-properties.hs
-+++ b/tests/seq-properties.hs
-@@ -809,16 +809,13 @@
- -- We want to ensure that
- --
- -- munzip xs = xs `seq` (fmap fst x, fmap snd x)
----
---- even in the presence of bottoms (alternatives are all balance-
---- fragile).
- prop_munzipLazy :: Seq (Integer, B) -> Bool
- prop_munzipLazy pairs = deepseq ((`seq` ()) <$> repaired) True
-   where
-     partialpairs = mapWithIndex (\i a -> update i err pairs) pairs
-     firstPieces = fmap (fst . munzip) partialpairs
-     repaired = mapWithIndex (\i s -> update i 10000 s) firstPieces
--    err = error "munzip isn't lazy enough"
-+    err = (0, B 0)
- 
- -- Applicative operations
- 
---- a/tests/map-strictness.hs
-+++ b/tests/map-strictness.hs
-@@ -12,7 +12,7 @@
- 
- import Data.Strict.Map.Autogen.Strict (Map)
- import qualified Data.Strict.Map.Autogen.Strict as M
--import qualified Data.Strict.Map.Autogen as L
-+import qualified Data.Map.Lazy as L
- 
- import Utils.IsUnit
- 
 --- a/tests/Tests/Move.hs
 +++ b/tests/Tests/Move.hs
 @@ -13,9 +13,7 @@
@@ -68,7 +37,7 @@
    ]
 --- a/tests/Tests/Vector/Boxed.hs
 +++ b/tests/Tests/Vector/Boxed.hs
-@@ -2,13 +2,13 @@
+@@ -2,15 +2,15 @@
  module Tests.Vector.Boxed (tests) where
  
  import Test.Tasty
@@ -79,21 +48,26 @@
  import GHC.Exts (inline)
  
  
--testGeneralBoxedVector :: forall a. (CommonContext a Data.Vector.Vector, Ord a, Data a) => Data.Vector.Vector a -> [Test]
-+testGeneralBoxedVector :: forall a. (CommonContext a Data.Strict.Vector.Vector, Ord a, Data a) => Data.Strict.Vector.Vector a -> [Test]
+ testGeneralBoxedVector
+-  :: forall a. (CommonContext a Data.Vector.Vector, Ord a, Data a)
+-  => Data.Vector.Vector a -> [TestTree]
++  :: forall a. (CommonContext a Data.Strict.Vector.Vector, Ord a, Data a)
++  => Data.Strict.Vector.Vector a -> [TestTree]
  testGeneralBoxedVector dummy = concatMap ($ dummy)
    [
      testSanity
-@@ -31,7 +31,7 @@
-   , testBoolFunctions
+@@ -34,8 +34,8 @@
    ]
  
--testNumericBoxedVector :: forall a. (CommonContext a Data.Vector.Vector, Ord a, Num a, Enum a, Random a, Data a) => Data.Vector.Vector a -> [Test]
-+testNumericBoxedVector :: forall a. (CommonContext a Data.Strict.Vector.Vector, Ord a, Num a, Enum a, Random a, Data a) => Data.Strict.Vector.Vector a -> [Test]
+ testNumericBoxedVector
+-  :: forall a. (CommonContext a Data.Vector.Vector, Ord a, Num a, Enum a, Random a, Data a)
+-  => Data.Vector.Vector a -> [TestTree]
++  :: forall a. (CommonContext a Data.Strict.Vector.Vector, Ord a, Num a, Enum a, Random a, Data a)
++  => Data.Strict.Vector.Vector a -> [TestTree]
  testNumericBoxedVector dummy = concatMap ($ dummy)
    [
      testGeneralBoxedVector
-@@ -41,7 +41,7 @@
+@@ -45,8 +45,8 @@
  
  tests =
    [ testGroup "Bool" $
@@ -101,130 +75,33 @@
 +    testBoolBoxedVector (undefined :: Data.Strict.Vector.Vector Bool)
    , testGroup "Int" $
 -    testNumericBoxedVector (undefined :: Data.Vector.Vector Int)
+-  , testGroup "unstream" $ testUnstream (undefined :: Data.Vector.Vector Int)
 +    testNumericBoxedVector (undefined :: Data.Strict.Vector.Vector Int)
++  , testGroup "unstream" $ testUnstream (undefined :: Data.Strict.Vector.Vector Int)
    ]
 --- a/tests/Tests/Vector/UnitTests.hs
 +++ b/tests/Tests/Vector/UnitTests.hs
-@@ -12,8 +12,8 @@
+@@ -1,3 +1,4 @@
++
+ {-# LANGUAGE ScopedTypeVariables #-}
+ 
+ module Tests.Vector.UnitTests (tests) where
+@@ -11,9 +12,9 @@
  import Data.Typeable
  import qualified Data.List as List
  import qualified Data.Vector.Generic  as Generic
 -import qualified Data.Vector as Boxed
+-import qualified Data.Vector.Internal.Check as Check
 -import qualified Data.Vector.Mutable as MBoxed
 +import qualified Data.Strict.Vector as Boxed
++import qualified Data.Strict.Vector.Autogen.Internal.Check as Check
 +import qualified Data.Strict.Vector.Autogen.Mutable as MBoxed
  import qualified Data.Vector.Primitive as Primitive
  import qualified Data.Vector.Storable as Storable
  import qualified Data.Vector.Unboxed as Unboxed
---- a/strict-containers.cabal
-+++ b/strict-containers.cabal
-@@ -155,12 +155,13 @@
-   hs-source-dirs:   tests
-   main-is:          map-properties.hs
-   type:             exitcode-stdio-1.0
--  build-depends:    containers-tests
-+  build-depends:    containers, strict-containers
-   build-depends:
-       array    >=0.4.0.0
-     , base     >=4.6     && <5
-     , deepseq  >=1.2     && <1.5
- 
-+  cpp-options:      -DSTRICT
-   ghc-options:      -O2
-   other-extensions:
-     BangPatterns
-@@ -179,7 +180,7 @@
-   hs-source-dirs:   tests
-   main-is:          map-strictness.hs
-   type:             exitcode-stdio-1.0
--  build-depends:    containers-tests
-+  build-depends:    containers, strict-containers
-   build-depends:
-       array                       >=0.4.0.0
-     , base                        >=4.6     && <5
-@@ -206,7 +207,7 @@
-   type:             exitcode-stdio-1.0
-   cpp-options:      -DSTRICT
-   other-modules:    IntMapValidity
--  build-depends:    containers-tests
-+  build-depends:    strict-containers
-   build-depends:
-       array    >=0.4.0.0
-     , base     >=4.6     && <5
-@@ -217,7 +218,7 @@
-     BangPatterns
-     CPP
- 
--  build-depends:    containers-tests
-+  build-depends:    containers, strict-containers
-   build-depends:
-       HUnit
-     , QuickCheck                  >=2.7.1
-@@ -234,7 +235,7 @@
-     BangPatterns
-     CPP
- 
--  build-depends:    containers-tests
-+  build-depends:    containers, strict-containers
-   build-depends:
-       array                       >=0.4.0.0
-     , base                        >=4.6     && <5
-@@ -256,7 +257,7 @@
-   hs-source-dirs:   tests
-   main-is:          seq-properties.hs
-   type:             exitcode-stdio-1.0
--  build-depends:    containers-tests
-+  build-depends:    strict-containers
-   build-depends:
-       array    >=0.4.0.0
-     , base     >=4.6     && <5
-@@ -285,6 +286,7 @@
-     QuickCheck >= 2.4.0.1,
-     test-framework >= 0.3.3,
-     test-framework-quickcheck2 >= 0.2.9,
-+    strict-containers,
-     unordered-containers
- 
-   default-language: Haskell2010
-@@ -294,7 +296,7 @@
- test-suite vector-tests-O0
-   Default-Language: Haskell2010
-   type: exitcode-stdio-1.0
--  Main-Is:  Main.hs
-+  Main-Is:  VectorMain.hs
- 
-   other-modules: Boilerplater
-                  Tests.Bundle
-@@ -302,14 +304,11 @@
-                  Tests.Vector
-                  Tests.Vector.Property
-                  Tests.Vector.Boxed
--                 Tests.Vector.Storable
--                 Tests.Vector.Primitive
--                 Tests.Vector.Unboxed
-                  Tests.Vector.UnitTests
-                  Utilities
- 
-   hs-source-dirs: tests
--  Build-Depends: base >= 4.5 && < 5, template-haskell, base-orphans >= 0.6, vector,
-+  Build-Depends: base >= 4.5 && < 5, template-haskell, base-orphans >= 0.6, vector, strict-containers,
-                  primitive, random,
-                  QuickCheck >= 2.9 && < 2.15, HUnit, tasty,
-                  tasty-hunit, tasty-quickcheck,
-@@ -330,10 +329,5 @@
-   Ghc-Options: -O0 -threaded
-   Ghc-Options: -Wall
- 
--  if !flag(Wall)
--    Ghc-Options: -fno-warn-orphans -fno-warn-missing-signatures
--    if impl(ghc >= 8.0) && impl( ghc < 8.1)
--      Ghc-Options: -Wno-redundant-constraints
--
- 
- -- DO NOT EDIT above, AUTOGEN tests
 --- a/tests/Utilities.hs
 +++ b/tests/Utilities.hs
-@@ -4,7 +4,7 @@
+@@ -5,7 +5,7 @@
  import Test.QuickCheck
  
  import Data.Foldable
@@ -235,13 +112,13 @@
  import qualified Data.Vector.Storable as DVS
 --- a/tests/intmap-strictness.hs
 +++ b/tests/intmap-strictness.hs
-@@ -1,3 +1,5 @@
-+{-# LANGUAGE CPP #-}
+@@ -1,4 +1,5 @@
+ {-# LANGUAGE CPP #-}
 +{-# LANGUAGE BangPatterns #-}
  {-# OPTIONS_GHC -fno-warn-orphans #-}
  
  module Main (main) where
-@@ -12,8 +14,8 @@
+@@ -14,8 +15,8 @@
  
  import Data.Strict.IntMap.Autogen.Strict (IntMap)
  import qualified Data.Strict.IntMap.Autogen.Strict as M
@@ -251,19 +128,10 @@
 +import qualified Data.IntSet as IntSet
  
  import Utils.IsUnit
- 
-@@ -90,7 +92,7 @@
- -- also https://github.com/haskell/containers/issues/473
- 
- pFromAscListLazy :: [Int] -> Bool
--pFromAscListLazy ks = not . isBottom $ M.fromAscList elems
-+pFromAscListLazy ks = not . isBottom $ L.fromAscList elems
-   where
-     elems = [(k, v) | k <- nubInt ks, v <- [undefined, ()]]
- 
-@@ -101,6 +103,25 @@
-   where
-     elems = [(k, v) | k <- nubInt ks, v <- [undefined, undefined, ()]]
+ #if __GLASGOW_HASKELL__ >= 806
+@@ -116,6 +117,25 @@
+ pStrictFoldl' m = whnfHasNoThunks (M.foldl' (flip (:)) [] m)
+ #endif
  
 +-- copy over definitions from Data.Containers.Utils so we can support older GHC
 +-- that have older versions of containers without this module
@@ -287,7 +155,7 @@
  ------------------------------------------------------------------------
  -- check for extra thunks
  --
-@@ -141,13 +162,16 @@
+@@ -156,7 +176,10 @@
      , check "insertWith"      False $ L.insertWith const 42 () m0
      , check "fromList"        True  $ L.fromList [(42,()),(42,())]
      , check "fromListWith"    False $ L.fromListWith const [(42,()),(42,())]
@@ -298,10 +166,81 @@
      , check "fromAscListWith" False $ L.fromAscListWith const [(42,()),(42,())]
      , check "fromDistinctAscList" True $ L.fromAscList [(42,())]
      ]
+--- a/tests/map-strictness.hs
++++ b/tests/map-strictness.hs
+@@ -15,7 +15,7 @@
+ 
+ import Data.Strict.Map.Autogen.Strict (Map)
+ import qualified Data.Strict.Map.Autogen.Strict as M
+-import qualified Data.Strict.Map.Autogen as L
++import qualified Data.Map.Lazy as L
+ 
+ import Utils.IsUnit
+ #if __GLASGOW_HASKELL__ >= 806
+--- a/tests/seq-properties.hs
++++ b/tests/seq-properties.hs
+@@ -38,7 +38,7 @@
+ import Test.Tasty
+ import Test.Tasty.QuickCheck hiding ((><))
+ import Test.QuickCheck.Function (apply)
+-import Test.QuickCheck.Poly (A, OrdA, B, OrdB, C)
++import Test.QuickCheck.Poly (A, OrdA, B(..), OrdB, C)
+ import Control.Monad.Zip (MonadZip (..))
+ import Control.DeepSeq (deepseq)
+ import Control.Monad.Fix (MonadFix (..))
+@@ -798,16 +798,13 @@
+ -- We want to ensure that
+ --
+ -- munzip xs = xs `seq` (fmap fst x, fmap snd x)
+---
+--- even in the presence of bottoms (alternatives are all balance-
+--- fragile).
+ prop_munzipLazy :: Seq (Integer, B) -> Bool
+ prop_munzipLazy pairs = deepseq ((`seq` ()) <$> repaired) True
    where
-     m0 = L.singleton 42 ()
--    check :: TestName -> Bool -> IntMap () -> Test
-+    check :: TestName -> Bool -> L.IntMap () -> Test
-     check n e m = testCase n $ case L.lookup 42 m of
-         Just v -> assertBool msg (e == isUnit v)
-         _      -> assertString "key not found"
+     partialpairs = mapWithIndex (\i a -> update i err pairs) pairs
+     firstPieces = fmap (fst . munzip) partialpairs
+     repaired = mapWithIndex (\i s -> update i 10000 s) firstPieces
+-    err = error "munzip isn't lazy enough"
++    err = (0, B 0)
+ 
+ -- Applicative operations
+ 
+--- a/strict-containers.cabal
++++ b/strict-containers.cabal
+@@ -259,7 +259,7 @@
+ test-suite vector-tests-O0
+   Default-Language: Haskell2010
+   type: exitcode-stdio-1.0
+-  Main-Is:  Main.hs
++  Main-Is:  VectorMain.hs
+ 
+   other-modules: Boilerplater
+                  Tests.Bundle
+@@ -267,14 +267,11 @@
+                  Tests.Vector
+                  Tests.Vector.Property
+                  Tests.Vector.Boxed
+-                 Tests.Vector.Storable
+-                 Tests.Vector.Primitive
+-                 Tests.Vector.Unboxed
+                  Tests.Vector.UnitTests
+                  Utilities
+ 
+   hs-source-dirs: tests
+-  Build-Depends: base >= 4.5 && < 5, template-haskell, base-orphans >= 0.6, vector,
++  Build-Depends: base >= 4.5 && < 5, template-haskell, base-orphans >= 0.6, vector, strict-containers,
+                  primitive, random,
+                  QuickCheck >= 2.9 && < 2.15, HUnit, tasty,
+                  tasty-hunit, tasty-quickcheck,
+@@ -293,10 +290,6 @@
+   Ghc-Options: -O0 -threaded
+   Ghc-Options: -Wall
+ 
+-  if !flag(Wall)
+-    Ghc-Options: -fno-warn-orphans -fno-warn-missing-signatures
+-    if impl(ghc >= 8.0) && impl(ghc < 8.1)
+-      Ghc-Options: -Wno-redundant-constraints
+ 
+ 
+ -- DO NOT EDIT above, AUTOGEN tests

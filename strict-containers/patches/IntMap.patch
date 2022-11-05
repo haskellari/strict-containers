@@ -1,6 +1,8 @@
+diff --git a/src/Data/Strict/IntMap/Autogen/Internal.hs b/src/Data/Strict/IntMap/Autogen/Internal.hs
+index 0d4baee..29ababb 100644
 --- a/src/Data/Strict/IntMap/Autogen/Internal.hs
 +++ b/src/Data/Strict/IntMap/Autogen/Internal.hs
-@@ -379,7 +379,7 @@
+@@ -359,7 +359,7 @@ data IntMap a = Bin {-# UNPACK #-} !Prefix
  --            the left of the Mask bit.
  -- Invariant: In (Bin prefix mask left right), left consists of the elements that
  --            don't have the mask bit set; right is all the elements that do.

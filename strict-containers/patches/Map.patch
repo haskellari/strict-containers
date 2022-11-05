@@ -1,6 +1,8 @@
+diff --git a/src/Data/Strict/Map/Autogen/Internal.hs b/src/Data/Strict/Map/Autogen/Internal.hs
+index e5303ca..949b4f6 100644
 --- a/src/Data/Strict/Map/Autogen/Internal.hs
 +++ b/src/Data/Strict/Map/Autogen/Internal.hs
-@@ -479,7 +479,7 @@
+@@ -458,7 +458,7 @@ m1 \\ m2 = difference m1 m2
  -- their union @m1 <> m2@ maps @k@ to @a1@.
  
  -- See Note: Order of constructors
