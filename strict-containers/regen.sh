@@ -1,6 +1,7 @@
 #!/bin/bash
 # Regenerate files from submodules.
 # Set CLEAN=1 to delete generated files, but don't regenerate them.
+# Set NOPATCH=1 to not apply patches.
 
 set -e
 shopt -s nullglob globstar
@@ -68,7 +69,7 @@ copy_and_rename() {
 	done
 	rename_modules "$path_r" "$path_l" "src/${path_l}.hs"* "src/${path_l}"/**/*.hs
 	( cd src && find "${path_l}.hs" "${path_l}" -type f 2>/dev/null | sed -e 's/.hs$//g' -e 's,/,.,g' ) | fixup_cabal "$type"
-	patch -p1 < "patches/$type.patch"
+	if [ -z "$NOPATCH" ]; then patch -p1 < "patches/$type.patch"; fi
 }
 
 get_section() {
@@ -151,7 +152,7 @@ if [ -z "$CLEAN" ]; then
 
 	cat "$TESTS_CABAL" | fixup_cabal tests ""
 	rm -f "$TESTS_CABAL"
-	patch -p1 < "patches/tests.patch"
+	if [ -z "$NOPATCH" ]; then patch -p1 < "patches/tests.patch"; fi
 else
 	cat /dev/null | fixup_cabal tests ""
 fi
