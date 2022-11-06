@@ -5,3 +5,8 @@ install-dependencies: False
 
 -- to allow different set of packages per GHC versions
 jobs-selection: any
+
+-- we depend on containers which is a core package (comes installed with ghc)
+-- by default, haskell-ci forbids these from being upgraded; override that here
+-- also override the rdeps of containers, as per their haskell-ci config
+installed: +all -containers -binary -text -ghc-heap
