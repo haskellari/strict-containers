@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP #-}
+
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Tests.Vector.UnitTests (tests) where
@@ -13,6 +13,7 @@ import Data.Typeable
 import qualified Data.List as List
 import qualified Data.Vector.Generic  as Generic
 import qualified Data.Strict.Vector as Boxed
+import qualified Data.Strict.Vector.Autogen.Internal.Check as Check
 import qualified Data.Strict.Vector.Autogen.Mutable as MBoxed
 import qualified Data.Vector.Primitive as Primitive
 import qualified Data.Vector.Storable as Storable
@@ -44,6 +45,12 @@ checkAddressAlignment xs = Storable.unsafeWith xs $ \ptr -> do
     dummy :: a
     dummy = undefined
 
+withBoundsChecksOnly :: [TestTree] -> [TestTree]
+withBoundsChecksOnly ts =
+  if Check.doChecks Check.Bounds
+     then ts
+     else []
+
 tests :: [TestTree]
 tests =
   [ testGroup "Data.Vector.Storable.Vector Alignment"
@@ -67,14 +74,15 @@ tests =
       , regression188 ([] :: [Char])
       ]
     ]
-  , testGroup "Negative tests"
-    [ testGroup "slice out of bounds #257"
+  , testGroup "Negative tests" $
+    withBoundsChecksOnly [ testGroup "slice out of bounds #257"
       [ testGroup "Boxed" $ testsSliceOutOfBounds Boxed.slice
       , testGroup "Primitive" $ testsSliceOutOfBounds Primitive.slice
       , testGroup "Storable" $ testsSliceOutOfBounds Storable.slice
       , testGroup "Unboxed" $ testsSliceOutOfBounds Unboxed.slice
-      ]
-    , testGroup "take #282"
+      ]]
+    ++
+    [ testGroup "take #282"
       [ testCase "Boxed" $ testTakeOutOfMemory Boxed.take
       , testCase "Primitive" $ testTakeOutOfMemory Primitive.take
       , testCase "Storable" $ testTakeOutOfMemory Storable.take
@@ -84,6 +92,8 @@ tests =
   , testGroup "Data.Vector"
     [ testCase "MonadFix" checkMonadFix
     , testCase "toFromArray" toFromArray
+    , testCase "toFromArraySlice" toFromArraySlice
+    , testCase "toFromArraySliceUnsafe" toFromArraySliceUnsafe
     , testCase "toFromMutableArray" toFromMutableArray
     ]
   ]
@@ -130,7 +140,7 @@ sliceTest sliceWith i m xs = do
        in assertBool assertMsg (errSuffix `List.isSuffixOf` err)
   where
     errSuffix =
-      "(slice): invalid slice (" ++
+      "invalid slice (" ++
       show i ++ "," ++ show m ++ "," ++ show (List.length xs) ++ ")"
 {-# INLINE sliceTest #-}
 
@@ -156,13 +166,11 @@ alignedDoubleVec = Storable.fromList $ map Aligned [1, 2, 3, 4, 5]
 alignedIntVec :: Storable.Vector (Aligned Int)
 alignedIntVec = Storable.fromList $ map Aligned [1, 2, 3, 4, 5]
 
-#if __GLASGOW_HASKELL__ >= 800
 -- Ensure that Mutable is really an injective type family by typechecking a
 -- function which relies on injectivity.
 _f :: (Generic.Vector v a, Generic.Vector w a, PrimMonad f)
    => Generic.Mutable v (PrimState f) a -> f (w a)
 _f v = Generic.convert `fmap` Generic.unsafeFreeze v
-#endif
 
 checkMonadFix :: Assertion
 checkMonadFix = assertBool "checkMonadFix" $
@@ -196,6 +204,22 @@ toFromArray :: Assertion
 toFromArray =
   mkArrayRoundtrip $ \name v ->
     assertEqual name v $ Boxed.fromArray (Boxed.toArray v)
+
+toFromArraySlice :: Assertion
+toFromArraySlice =
+  mkArrayRoundtrip $ \name v ->
+    case Boxed.toArraySlice v of
+      (arr, off, n) ->
+        assertEqual name v $
+        Boxed.take n (Boxed.drop off (Boxed.fromArray arr))
+
+toFromArraySliceUnsafe :: Assertion
+toFromArraySliceUnsafe =
+  mkArrayRoundtrip $ \name v ->
+    case Boxed.toArraySlice v of
+      (arr, off, n) ->
+        assertEqual name v $
+        Boxed.unsafeFromArraySlice arr off n
 
 toFromMutableArray :: Assertion
 toFromMutableArray = mkArrayRoundtrip assetRoundtrip

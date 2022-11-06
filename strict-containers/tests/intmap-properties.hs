@@ -27,18 +27,16 @@ import qualified Prelude (map)
 import Data.List (nub,sort)
 import qualified Data.List as List
 import qualified Data.IntSet as IntSet
-import Test.Framework
-import Test.Framework.Providers.HUnit
-import Test.Framework.Providers.QuickCheck2
-import Test.HUnit hiding (Test, Testable)
-import Test.QuickCheck
-import Test.QuickCheck.Function (Fun(..), apply)
+import Test.Tasty
+import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
+import Test.QuickCheck.Function (apply)
 import Test.QuickCheck.Poly (A, B, C)
 
 default (Int)
 
 main :: IO ()
-main = defaultMain
+main = defaultMain $ testGroup "intmap-properties"
          [
                testCase "index"      test_index
              , testCase "index_lookup" test_index_lookup
@@ -133,10 +131,8 @@ main = defaultMain
              , testCase "maxView" test_maxView
              , testCase "minViewWithKey" test_minViewWithKey
              , testCase "maxViewWithKey" test_maxViewWithKey
-#if MIN_VERSION_base(4,8,0)
              , testCase "minimum" test_minimum
              , testCase "maximum" test_maximum
-#endif
              , testProperty "valid"                prop_valid
              , testProperty "empty valid"          prop_emptyValid
              , testProperty "insert to singleton"  prop_singleton
@@ -238,16 +234,6 @@ type IMap = IntMap Int
 type SMap = IntMap String
 
 ----------------------------------------------------------------
-
-tests :: [Test]
-tests = [ testGroup "Test Case" [
-             ]
-        , testGroup "Property Test" [
-             ]
-        ]
-
-
-----------------------------------------------------------------
 -- Unit tests
 ----------------------------------------------------------------
 
@@ -307,12 +293,17 @@ test_notMember = do
 
 test_lookup :: Assertion
 test_lookup = do
-    employeeCurrency 1 @?= Just 1
-    employeeCurrency 2 @?= Nothing
+    employeeCurrency 1      @?= Just 1
+    employeeCurrency 2      @?= Just 2
+    employeeCurrency 3      @?= Just 3
+    employeeCurrency 4      @?= Just 4
+    employeeCurrency 5      @?= Nothing
+    employeeCurrency (2^10) @?= Just 42
+    employeeCurrency 6      @?= Nothing
   where
-    employeeDept = fromList([(1,2), (3,1)])
-    deptCountry = fromList([(1,1), (2,2)])
-    countryCurrency = fromList([(1, 2), (2, 1)])
+    employeeDept    = fromList [(1,2), (2, 14), (3, 10), (4, 18), (2^10, 100)]
+    deptCountry     = fromList [(1,1), (14, 14), (10, 10), (18, 18), (100, 100), (2,2)]
+    countryCurrency = fromList [(1, 2), (2, 1), (14, 2), (10, 3), (18, 4), (100, 42)]
     employeeCurrency :: Int -> Maybe Int
     employeeCurrency name = do
         dept <- lookup name employeeDept
@@ -1117,8 +1108,6 @@ test_maxViewWithKey = do
     maxViewWithKey (fromList [(5,"a"), (-3,"b")]) @?= Just ((5,"a"), singleton (-3) "b")
     maxViewWithKey (empty :: SMap) @?= Nothing
 
-
-#if MIN_VERSION_base(4,8,0)
 test_minimum :: Assertion
 test_minimum = do
     getOW (minimum testOrdMap) @?= "min"
@@ -1139,8 +1128,6 @@ data OrdWith a = OrdWith String a
 
 instance Ord a => Ord (OrdWith a) where
     OrdWith _ a1 <= OrdWith _ a2 = a1 <= a2
-#endif
-
 
 ----------------------------------------------------------------
 -- Valid IntMaps

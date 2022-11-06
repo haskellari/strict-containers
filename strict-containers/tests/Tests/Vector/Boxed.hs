@@ -8,7 +8,9 @@ import Tests.Vector.Property
 import GHC.Exts (inline)
 
 
-testGeneralBoxedVector :: forall a. (CommonContext a Data.Strict.Vector.Vector, Ord a, Data a) => Data.Strict.Vector.Vector a -> [Test]
+testGeneralBoxedVector
+  :: forall a. (CommonContext a Data.Strict.Vector.Vector, Ord a, Data a)
+  => Data.Strict.Vector.Vector a -> [TestTree]
 testGeneralBoxedVector dummy = concatMap ($ dummy)
   [
     testSanity
@@ -31,7 +33,9 @@ testBoolBoxedVector dummy = concatMap ($ dummy)
   , testBoolFunctions
   ]
 
-testNumericBoxedVector :: forall a. (CommonContext a Data.Strict.Vector.Vector, Ord a, Num a, Enum a, Random a, Data a) => Data.Strict.Vector.Vector a -> [Test]
+testNumericBoxedVector
+  :: forall a. (CommonContext a Data.Strict.Vector.Vector, Ord a, Num a, Enum a, Random a, Data a)
+  => Data.Strict.Vector.Vector a -> [TestTree]
 testNumericBoxedVector dummy = concatMap ($ dummy)
   [
     testGeneralBoxedVector
@@ -44,4 +48,5 @@ tests =
     testBoolBoxedVector (undefined :: Data.Strict.Vector.Vector Bool)
   , testGroup "Int" $
     testNumericBoxedVector (undefined :: Data.Strict.Vector.Vector Int)
+  , testGroup "unstream" $ testUnstream (undefined :: Data.Strict.Vector.Vector Int)
   ]

@@ -7,11 +7,6 @@
 
 module Data.Strict.ContainersUtils.Autogen.StrictMaybe (MaybeS (..), maybeS, toMaybe, toMaybeS) where
 
-#if !MIN_VERSION_base(4,8,0)
-import Data.Foldable (Foldable (..))
-import Data.Monoid (Monoid (..))
-#endif
-
 data MaybeS a = NothingS | JustS !a
 
 instance Foldable MaybeS where

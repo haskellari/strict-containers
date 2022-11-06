@@ -19,6 +19,7 @@ import Data.Monoid
 import Data.Maybe hiding (mapMaybe)
 import qualified Data.Maybe as Maybe (mapMaybe)
 import Data.Ord
+import Data.Semigroup (Arg(..))
 import Data.Function
 import qualified Data.Foldable as Foldable
 #if MIN_VERSION_base(4,10,0)
@@ -30,12 +31,10 @@ import qualified Prelude
 import Data.List (nub,sort)
 import qualified Data.List as List
 import qualified Data.Set as Set
-import Test.Framework
-import Test.Framework.Providers.HUnit
-import Test.Framework.Providers.QuickCheck2
-import Test.HUnit hiding (Test, Testable)
-import Test.QuickCheck
-import Test.QuickCheck.Function (Fun (..), apply)
+import Test.Tasty
+import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
+import Test.QuickCheck.Function (apply)
 import Test.QuickCheck.Poly (A, B)
 import Control.Arrow (first)
 
@@ -48,7 +47,7 @@ apply2 :: Fun (a,b) c -> a -> b -> c
 apply2 f a b = apply f (a, b)
 
 main :: IO ()
-main = defaultMain
+main = defaultMain $ testGroup "map-properties"
          [ testCase "ticket4242" test_ticket4242
          , testCase "index"      test_index
          , testCase "size"       test_size
@@ -101,7 +100,9 @@ main = defaultMain
          , testCase "keys" test_keys
          , testCase "assocs" test_assocs
          , testCase "keysSet" test_keysSet
+         , testCase "argSet" test_argSet
          , testCase "fromSet" test_fromSet
+         , testCase "fromArgSet" test_fromArgSet
          , testCase "toList" test_toList
          , testCase "fromList" test_fromList
          , testCase "fromListWith" test_fromListWith
@@ -240,7 +241,9 @@ main = defaultMain
          , testProperty "bifoldl'"             prop_bifoldl'
 #endif
          , testProperty "keysSet"              prop_keysSet
+         , testProperty "argSet"               prop_argSet
          , testProperty "fromSet"              prop_fromSet
+         , testProperty "fromArgSet"           prop_fromArgSet
          , testProperty "takeWhileAntitone"    prop_takeWhileAntitone
          , testProperty "dropWhileAntitone"    prop_dropWhileAntitone
          , testProperty "spanAntitone"         prop_spanAntitone
@@ -713,10 +716,20 @@ test_keysSet = do
     keysSet (fromList [(5,"a"), (3,"b")]) @?= Set.fromList [3,5]
     keysSet (empty :: UMap) @?= Set.empty
 
+test_argSet :: Assertion
+test_argSet = do
+    argSet (fromList [(5,"a"), (3,"b")]) @?= Set.fromList [Arg 3 "b",Arg 5 "a"]
+    argSet (empty :: UMap) @?= Set.empty
+
 test_fromSet :: Assertion
 test_fromSet = do
    fromSet (\k -> replicate k 'a') (Set.fromList [3, 5]) @?= fromList [(5,"aaaaa"), (3,"aaa")]
    fromSet undefined Set.empty @?= (empty :: IMap)
+
+test_fromArgSet :: Assertion
+test_fromArgSet = do
+   fromArgSet (Set.fromList [Arg 3 "aaa", Arg 5 "aaaaa"]) @?= fromList [(5,"aaaaa"), (3,"aaa")]
+   fromArgSet Set.empty @?= (empty :: IMap)
 
 ----------------------------------------------------------------
 -- Lists
@@ -1558,7 +1571,16 @@ prop_keysSet :: [(Int, Int)] -> Bool
 prop_keysSet xs =
   keysSet (fromList xs) == Set.fromList (List.map fst xs)
 
+prop_argSet :: [(Int, Int)] -> Bool
+prop_argSet xs =
+  argSet (fromList xs) == Set.fromList (List.map (uncurry Arg) xs)
+
 prop_fromSet :: [(Int, Int)] -> Bool
 prop_fromSet ys =
   let xs = List.nubBy ((==) `on` fst) ys
   in fromSet (\k -> fromJust $ List.lookup k xs) (Set.fromList $ List.map fst xs) == fromList xs
+
+prop_fromArgSet :: [(Int, Int)] -> Bool
+prop_fromArgSet ys =
+  let xs = List.nubBy ((==) `on` fst) ys
+  in fromArgSet (Set.fromList $ List.map (uncurry Arg) xs) == fromList xs

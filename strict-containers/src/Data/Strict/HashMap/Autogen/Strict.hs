@@ -18,7 +18,7 @@
 -- especially when key comparison is expensive, as in the case of
 -- strings.
 --
--- Many operations have a average-case complexity of /O(log n)/.  The
+-- Many operations have a average-case complexity of \(O(\log n)\).  The
 -- implementation uses a large base (i.e. 16) so in practice these
 -- operations are constant time.
 module Data.Strict.HashMap.Autogen.Strict
@@ -65,6 +65,7 @@ module Data.Strict.HashMap.Autogen.Strict
     , map
     , mapWithKey
     , traverseWithKey
+    , mapKeys
 
       -- * Difference and intersection
     , difference
@@ -101,8 +102,10 @@ module Data.Strict.HashMap.Autogen.Strict
     , fromListWithKey
     ) where
 
-import Data.Strict.HashMap.Autogen.Internal.Strict as HM
-import Prelude ()
+import Data.Strict.HashMap.Autogen.Internal.Strict
+import Prelude                      ()
+
+import qualified Data.HashSet.Internal as HS
 
 -- $strictness
 --

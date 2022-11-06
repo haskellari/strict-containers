@@ -39,9 +39,9 @@ Description:
   .
 -- generated list for versions
 -- DO NOT EDIT below, AUTOGEN versions
-  * containers v0.6.4.1
-  * unordered-containers v0.2.13.0
-  * vector v0.12.3.0
+  * containers v0.6.6
+  * unordered-containers v0.2.19.1
+  * vector vector-0.13.0.0
 -- DO NOT EDIT above, AUTOGEN versions
 License:        BSD-3-Clause
 License-File:   LICENSE
@@ -53,6 +53,7 @@ extra-source-files:
     CHANGELOG.md
     -- generated list for includes
     -- DO NOT EDIT below, AUTOGEN includes
+    include/vector.h
     include/containers.h
     -- DO NOT EDIT above, AUTOGEN includes
 tested-with:
@@ -94,7 +95,6 @@ library
     Data.Strict.HashMap.Autogen.Internal.Array
     Data.Strict.HashMap.Autogen.Internal.Strict
     Data.Strict.HashMap.Autogen.Internal.List
-    Data.Strict.HashMap.Autogen.Internal.Unsafe
     -- DO NOT EDIT above, AUTOGEN HashMap
     Data.Strict.HashSet
     Data.Strict.IntMap
@@ -146,53 +146,51 @@ library
     -- DO NOT EDIT below, AUTOGEN Vector
     Data.Strict.Vector.Autogen
     Data.Strict.Vector.Autogen.Mutable
+    Data.Strict.Vector.Autogen.Internal.Check
     -- DO NOT EDIT above, AUTOGEN Vector
 
   include-dirs: include
 
 -- generated list for tests
 -- DO NOT EDIT below, AUTOGEN tests
+common containers-deps
+  build-depends:
+      array    >=0.4.0.0
+    , base     >=4.9.1   && <5
+    , deepseq  >=1.2     && <1.5
+    , template-haskell
+
+common containers-test-deps
+  import: containers-deps
+  build-depends:
+      strict-containers,containers
+    , QuickCheck                  >=2.7.1
+    , tasty
+    , tasty-hunit
+    , tasty-quickcheck
+    , transformers
+
 test-suite map-strict-properties
+  import: containers-test-deps
   default-language: Haskell2010
   hs-source-dirs:   tests
   main-is:          map-properties.hs
   type:             exitcode-stdio-1.0
-  build-depends:    containers, strict-containers
-  build-depends:
-      array    >=0.4.0.0
-    , base     >=4.6     && <5
-    , deepseq  >=1.2     && <1.5
-
   cpp-options:      -DSTRICT
+
   ghc-options:      -O2
   other-extensions:
     BangPatterns
     CPP
 
-  build-depends:
-      HUnit
-    , QuickCheck                  >=2.7.1
-    , test-framework
-    , test-framework-hunit
-    , test-framework-quickcheck2
-    , transformers
-
 test-suite map-strictness-properties
+  import: containers-test-deps
   default-language: Haskell2010
   hs-source-dirs:   tests
   main-is:          map-strictness.hs
   type:             exitcode-stdio-1.0
-  build-depends:    containers, strict-containers
   build-depends:
-      array                       >=0.4.0.0
-    , base                        >=4.6     && <5
-    , ChasingBottoms
-    , deepseq                     >=1.2     && <1.5
-    , HUnit
-    , QuickCheck                  >=2.7.1
-    , test-framework              >=0.3.3
-    , test-framework-quickcheck2  >=0.2.9
-    , test-framework-hunit
+      ChasingBottoms
 
   ghc-options:      -Wall
   other-extensions:
@@ -202,33 +200,28 @@ test-suite map-strictness-properties
   other-modules:
     Utils.IsUnit
 
+  if impl(ghc >= 8.6)
+    build-depends:
+      nothunks
+    other-modules:
+      Utils.NoThunks
+
 test-suite intmap-strict-properties
+  import: containers-test-deps
   default-language: Haskell2010
   hs-source-dirs:   tests
   main-is:          intmap-properties.hs
   type:             exitcode-stdio-1.0
   cpp-options:      -DSTRICT
   other-modules:    IntMapValidity
-  build-depends:    strict-containers
-  build-depends:
-      array    >=0.4.0.0
-    , base     >=4.6     && <5
-    , deepseq  >=1.2     && <1.5
 
   ghc-options:      -O2
   other-extensions:
     BangPatterns
     CPP
 
-  build-depends:    containers, strict-containers
-  build-depends:
-      HUnit
-    , QuickCheck                  >=2.7.1
-    , test-framework
-    , test-framework-hunit
-    , test-framework-quickcheck2
-
 test-suite intmap-strictness-properties
+  import: containers-test-deps
   default-language: Haskell2010
   hs-source-dirs:   tests
   main-is:          intmap-strictness.hs
@@ -237,63 +230,31 @@ test-suite intmap-strictness-properties
     BangPatterns
     CPP
 
-  build-depends:    containers, strict-containers
   build-depends:
-      array                       >=0.4.0.0
-    , base                        >=4.6     && <5
-    , ChasingBottoms
-    , deepseq                     >=1.2     && <1.5
-    , HUnit
-    , QuickCheck                  >=2.7.1
-    , test-framework              >=0.3.3
-    , test-framework-quickcheck2  >=0.2.9
-    , test-framework-hunit
+      ChasingBottoms
 
   ghc-options:      -Wall
 
   other-modules:
     Utils.IsUnit
 
+  if impl(ghc >= 8.6)
+    build-depends:
+      nothunks
+    other-modules:
+      Utils.NoThunks
+
 test-suite seq-properties
+  import: containers-test-deps
   default-language: Haskell2010
   hs-source-dirs:   tests
   main-is:          seq-properties.hs
   type:             exitcode-stdio-1.0
-  build-depends:    strict-containers
-  build-depends:
-      array    >=0.4.0.0
-    , base     >=4.6     && <5
-    , deepseq  >=1.2     && <1.5
 
   ghc-options:      -O2
   other-extensions:
     BangPatterns
     CPP
-
-  build-depends:
-      QuickCheck                  >=2.7.1
-    , test-framework
-    , test-framework-quickcheck2
-    , transformers
-
-test-suite hashmap-strict-properties
-  hs-source-dirs: tests
-  main-is: HashMapProperties.hs
-  type: exitcode-stdio-1.0
-
-  build-depends:
-    base,
-    containers >= 0.5.8,
-    hashable >= 1.0.1.1,
-    QuickCheck >= 2.4.0.1,
-    test-framework >= 0.3.3,
-    test-framework-quickcheck2 >= 0.2.9,
-    strict-containers,
-    unordered-containers
-
-  default-language: Haskell2010
-  ghc-options: -Wall
-  cpp-options: -DASSERTS -DSTRICT
 
 test-suite vector-tests-O0
   Default-Language: Haskell2010
@@ -315,21 +276,20 @@ test-suite vector-tests-O0
                  QuickCheck >= 2.9 && < 2.15, HUnit, tasty,
                  tasty-hunit, tasty-quickcheck,
                  transformers >= 0.2.0.0
-  if !impl(ghc > 8.0)
-    Build-Depends: semigroups
 
   default-extensions: CPP,
               ScopedTypeVariables,
               PatternGuards,
               MultiParamTypeClasses,
               FlexibleContexts,
-              Rank2Types,
+              RankNTypes,
               TypeSynonymInstances,
               TypeFamilies,
               TemplateHaskell
 
   Ghc-Options: -O0 -threaded
   Ghc-Options: -Wall
+
 
 
 -- DO NOT EDIT above, AUTOGEN tests

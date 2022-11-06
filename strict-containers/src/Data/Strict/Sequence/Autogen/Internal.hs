@@ -4,11 +4,14 @@
 #if __GLASGOW_HASKELL__
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TemplateHaskellQuotes #-}
 {-# LANGUAGE Trustworthy #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 #endif
 #ifdef DEFINE_PATTERN_SYNONYMS
 {-# LANGUAGE PatternSynonyms #-}
@@ -17,6 +20,7 @@
 {-# LANGUAGE PatternGuards #-}
 
 {-# OPTIONS_HADDOCK not-home #-}
+{-# OPTIONS_GHC -fno-warn-incomplete-uni-patterns #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -192,13 +196,10 @@ import Prelude hiding (
 #if MIN_VERSION_base(4,11,0)
     (<>),
 #endif
-#if MIN_VERSION_base(4,8,0)
     Applicative, (<$>), foldMap, Monoid,
-#endif
     null, length, lookup, take, drop, splitAt, foldl, foldl1, foldr, foldr1,
     scanl, scanl1, scanr, scanr1, replicate, zip, zipWith, zip3, zipWith3,
     unzip, takeWhile, dropWhile, iterate, reverse, filter, mapM, sum, all)
-import qualified Data.List
 import Control.Applicative (Applicative(..), (<$>), (<**>),  Alternative,
                             liftA2, liftA3)
 import qualified Control.Applicative as Applicative
@@ -208,13 +209,11 @@ import Data.Monoid (Monoid(..))
 import Data.Functor (Functor(..))
 import Data.Strict.ContainersUtils.Autogen.State (State(..), execState)
 import Data.Foldable (Foldable(foldl, foldl1, foldr, foldr1, foldMap, foldl', foldr'), toList)
+import qualified Data.Foldable as F
 
-#if MIN_VERSION_base(4,9,0)
 import qualified Data.Semigroup as Semigroup
 import Data.Functor.Classes
-#endif
 import Data.Traversable
-import Data.Typeable
 
 -- GHC specific stuff
 #ifdef __GLASGOW_HASKELL__
@@ -223,8 +222,7 @@ import Text.Read (Lexeme(Ident), lexP, parens, prec,
     readPrec, readListPrec, readListPrecDefault)
 import Data.Data
 import Data.String (IsString(..))
-#endif
-#if __GLASGOW_HASKELL__
+import qualified Language.Haskell.TH.Syntax as TH
 import GHC.Generics (Generic, Generic1)
 #endif
 
@@ -236,21 +234,10 @@ import qualified GHC.Arr
 #endif
 
 import Data.Strict.ContainersUtils.Autogen.Coercions ((.#), (.^#))
--- Coercion on GHC 7.8+
-#if __GLASGOW_HASKELL__ >= 708
 import Data.Coerce
 import qualified GHC.Exts
-#else
-#endif
 
--- Identity functor on base 4.8 (GHC 7.10+)
-#if MIN_VERSION_base(4,8,0)
 import Data.Functor.Identity (Identity(..))
-#endif
-
-#if !MIN_VERSION_base(4,8,0)
-import Data.Word (Word)
-#endif
 
 import Data.Strict.ContainersUtils.Autogen.StrictPair (StrictPair (..), toPair)
 import Control.Monad.Zip (MonadZip (..))
@@ -350,6 +337,41 @@ instance Sized (ForceBox a) where
 -- | General-purpose finite sequences.
 newtype Seq a = Seq (FingerTree (Elem a))
 
+#ifdef __GLASGOW_HASKELL__
+-- | @since FIXME
+instance TH.Lift a => TH.Lift (Seq a) where
+#  if MIN_VERSION_template_haskell(2,16,0)
+  liftTyped t = [|| coerceFT z ||]
+#  else
+  lift t = [| coerceFT z |]
+#  endif
+    where
+      -- We rebalance the sequence to use only 3-nodes before lifting its
+      -- underlying finger tree. This should minimize the size and depth of the
+      -- tree generated at run-time. It also reduces the size of the splice,
+      -- but I don't know how that affects the size of the resulting Core once
+      -- all the types are added.
+      Seq ft = zipWith (flip const) (replicate (length t) ()) t
+
+      -- We remove the 'Elem' constructors to reduce the size of the splice
+      -- and the number of types and coercions in the generated Core. Instead
+      -- of, say,
+      --
+      --   Seq (Deep 3 (Two (Elem 1) (Elem 2)) EmptyT (One (Elem 3)))
+      --
+      -- we generate
+      --
+      --   coerceFT (Deep 3 (Two 1 2)) EmptyT (One 3)
+      z :: FingerTree a
+      z = coerce ft
+
+-- | We use this to help the types work out for splices in the
+-- Lift instance. Things get a bit yucky otherwise.
+coerceFT :: FingerTree a -> Seq a
+coerceFT = coerce
+
+#endif
+
 instance Functor Seq where
     fmap = fmapSeq
 #ifdef __GLASGOW_HASKELL__
@@ -362,11 +384,6 @@ fmapSeq f (Seq xs) = Seq (fmap (fmap f) xs)
 {-# NOINLINE [1] fmapSeq #-}
 {-# RULES
 "fmapSeq/fmapSeq" forall f g xs . fmapSeq f (fmapSeq g xs) = fmapSeq (f . g) xs
- #-}
-#endif
-#if __GLASGOW_HASKELL__ >= 709
--- Safe coercions were introduced in 7.8, but did not work well with RULES yet.
-{-# RULES
 "fmapSeq/coerce" fmapSeq coerce = coerce
  #-}
 #endif
@@ -399,12 +416,10 @@ instance Foldable Seq where
     foldl1 f (Seq xs) = getElem (foldl1 f' xs)
       where f' (Elem x) (Elem y) = Elem (f x y)
 
-#if MIN_VERSION_base(4,8,0)
     length = length
     {-# INLINE length #-}
     null   = null
     {-# INLINE null #-}
-#endif
 
 instance Traversable Seq where
 #if __GLASGOW_HASKELL__
@@ -456,7 +471,7 @@ instance Traversable Seq where
                 (\a' b' c' d' -> Four (Elem a') (Elem b') (Elem c') (Elem d'))
                 (f a)
                 (f b)
-                (f c) <*> 
+                (f c) <*>
                 (f d)
         traverseDigitN
             :: Applicative f
@@ -520,7 +535,7 @@ apSeq fs xs@(Seq xsFT) = case viewl fs of
     EmptyR -> fmap firstf xs
     Seq fs''FT :> lastf -> case rigidify xsFT of
          RigidEmpty -> empty
-         RigidOne (Elem x) -> fmap ($x) fs
+         RigidOne (Elem x) -> fmap ($ x) fs
          RigidTwo (Elem x1) (Elem x2) ->
             Seq $ ap2FT firstf fs''FT lastf (x1, x2)
          RigidThree (Elem x1) (Elem x2) (Elem x3) ->
@@ -592,7 +607,7 @@ liftA2Seq f xs ys@(Seq ysFT) = case viewl xs of
              (fmap (fmap (f lastx)) (nodeToDigit sf))
   where
     lift_elem :: (a -> b -> c) -> a -> Elem b -> Elem c
-#if __GLASGOW_HASKELL__ >= 708
+#ifdef __GLASGOW_HASKELL__
     lift_elem = coerce
 #else
     lift_elem f x (Elem y) = Elem (f x y)
@@ -774,8 +789,8 @@ squashR (One12 n) m = node2 n m
 squashR (Two12 n1 n2) m = node3 n1 n2 m
 
 
--- | /O(m*n)/ (incremental) Takes an /O(m)/ function and a finger tree of size
--- /n/ and maps the function over the tree leaves. Unlike the usual 'fmap', the
+-- | \(O(mn)\) (incremental) Takes an \(O(m)\) function and a finger tree of size
+-- \(n\) and maps the function over the tree leaves. Unlike the usual 'fmap', the
 -- function is applied to the "leaves" of the 'FingerTree' (i.e., given a
 -- @FingerTree (Elem a)@, it applies the function to elements of type @Elem
 -- a@), replacing the leaves with subtrees of at least the same height, e.g.,
@@ -790,7 +805,7 @@ mapMulNode :: Int -> (a -> b) -> Node a -> Node b
 mapMulNode mul f (Node2 s a b)   = Node2 (mul * s) (f a) (f b)
 mapMulNode mul f (Node3 s a b c) = Node3 (mul * s) (f a) (f b) (f c)
 
--- | /O(log n)/ (incremental) Takes the extra flexibility out of a 'FingerTree'
+-- | \(O(\log n)\) (incremental) Takes the extra flexibility out of a 'FingerTree'
 -- to make it a genuine 2-3 finger tree. The result of 'rigidify' will have
 -- only two and three digits at the top level and only one and two
 -- digits elsewhere. If the tree has fewer than four elements, 'rigidify'
@@ -820,7 +835,7 @@ rigidify (Deep s (One a) m sf) = case viewLTree m of
      Three b c d -> RigidFull $ Rigid s (node2 a b) EmptyTh (node2 c d)
      Four b c d e -> RigidFull $ Rigid s (node3 a b c) EmptyTh (node2 d e)
 
--- | /O(log n)/ (incremental) Takes a tree whose left side has been rigidified
+-- | \(O(\log n)\) (incremental) Takes a tree whose left side has been rigidified
 -- and finishes the job.
 rigidifyRight :: Int -> Digit23 (Elem a) -> FingerTree (Node (Elem a)) -> Digit (Elem a) -> Rigidified (Elem a)
 
@@ -837,7 +852,7 @@ rigidifyRight s pr m (One e) = case viewRTree m of
       Node2 _ a b -> RigidThree a b e
       Node3 _ a b c -> RigidFull $ Rigid s (node2 a b) EmptyTh (node2 c e)
 
--- | /O(log n)/ (incremental) Rejigger a finger tree so the digits are all ones
+-- | \(O(\log n)\) (incremental) Rejigger a finger tree so the digits are all ones
 -- and twos.
 thin :: Sized a => FingerTree a -> Thin a
 -- Note that 'thin12' will produce a 'DeepTh' constructor immediately before
@@ -905,7 +920,6 @@ instance Show a => Show (Seq a) where
         showString "fromList " . shows (toList xs)
 #endif
 
-#if MIN_VERSION_base(4,9,0)
 -- | @since 0.5.9
 instance Show1 Seq where
   liftShowsPrec _shwsPrc shwList p xs = showParen (p > 10) $
@@ -918,7 +932,6 @@ instance Eq1 Seq where
 -- | @since 0.5.9
 instance Ord1 Seq where
     liftCompare cmp xs ys = liftCompare cmp (toList xs) (toList ys)
-#endif
 
 instance Read a => Read (Seq a) where
 #ifdef __GLASGOW_HASKELL__
@@ -935,31 +948,21 @@ instance Read a => Read (Seq a) where
         return (fromList xs,t)
 #endif
 
-#if MIN_VERSION_base(4,9,0)
 -- | @since 0.5.9
 instance Read1 Seq where
   liftReadsPrec _rp readLst p = readParen (p > 10) $ \r -> do
     ("fromList",s) <- lex r
     (xs,t) <- readLst s
     pure (fromList xs, t)
-#endif
 
 instance Monoid (Seq a) where
     mempty = empty
-#if MIN_VERSION_base(4,9,0)
     mappend = (Semigroup.<>)
-#else
-    mappend = (><)
-#endif
 
-#if MIN_VERSION_base(4,9,0)
 -- | @since 0.5.7
 instance Semigroup.Semigroup (Seq a) where
     (<>)    = (><)
     stimes = cycleNTimes . fromIntegral
-#endif
-
-INSTANCE_TYPEABLE1(Seq)
 
 #if __GLASGOW_HASKELL__
 instance Data a => Data (Seq a) where
@@ -1004,6 +1007,8 @@ deriving instance Generic1 FingerTree
 
 -- | @since 0.6.1
 deriving instance Generic (FingerTree a)
+
+deriving instance TH.Lift a => TH.Lift (FingerTree a)
 #endif
 
 instance Sized a => Sized (FingerTree a) where
@@ -1016,7 +1021,7 @@ instance Sized a => Sized (FingerTree a) where
 instance Foldable FingerTree where
     foldMap _ EmptyT = mempty
     foldMap f' (Single x') = f' x'
-    foldMap f' (Deep _ pr' m' sf') = 
+    foldMap f' (Deep _ pr' m' sf') =
         foldMapDigit f' pr' <>
         foldMapTree (foldMapNode f') m' <>
         foldMapDigit f' sf'
@@ -1024,7 +1029,7 @@ instance Foldable FingerTree where
         foldMapTree :: Monoid m => (Node a -> m) -> FingerTree (Node a) -> m
         foldMapTree _ EmptyT = mempty
         foldMapTree f (Single x) = f x
-        foldMapTree f (Deep _ pr m sf) = 
+        foldMapTree f (Deep _ pr m sf) =
             foldMapDigitN f pr <>
             foldMapTree (foldMapNodeN f) m <>
             foldMapDigitN f sf
@@ -1195,6 +1200,8 @@ deriving instance Generic1 Digit
 
 -- | @since 0.6.1
 deriving instance Generic (Digit a)
+
+deriving instance TH.Lift a => TH.Lift (Digit a)
 #endif
 
 foldDigit :: (b -> b -> b) -> (a -> b) -> Digit a -> b
@@ -1296,6 +1303,8 @@ deriving instance Generic1 Node
 
 -- | @since 0.6.1
 deriving instance Generic (Node a)
+
+deriving instance TH.Lift a => TH.Lift (Node a)
 #endif
 
 foldNode :: (b -> b -> b) -> (a -> b) -> Node a -> b
@@ -1371,7 +1380,7 @@ instance Sized (Elem a) where
     size _ = 1
 
 instance Functor Elem where
-#if __GLASGOW_HASKELL__ >= 708
+#ifdef __GLASGOW_HASKELL__
 -- This cuts the time for <*> by around a fifth.
     fmap = coerce
 #else
@@ -1380,7 +1389,7 @@ instance Functor Elem where
 
 instance Foldable Elem where
     foldr f z (Elem x) = f x z
-#if __GLASGOW_HASKELL__ >= 708
+#ifdef __GLASGOW_HASKELL__
     foldMap = coerce
     foldl = coerce
     foldl' = coerce
@@ -1399,16 +1408,6 @@ instance NFData a => NFData (Elem a) where
 -------------------------------------------------------
 -- Applicative construction
 -------------------------------------------------------
-#if !MIN_VERSION_base(4,8,0)
-newtype Identity a = Identity {runIdentity :: a}
-
-instance Functor Identity where
-    fmap f (Identity x) = Identity (f x)
-
-instance Applicative Identity where
-    pure = Identity
-    Identity f <*> Identity x = Identity (f x)
-#endif
 
 -- | 'applicativeTree' takes an Applicative-wrapped construction of a
 -- piece of a FingerTree, assumed to always have the same size (which
@@ -1418,7 +1417,7 @@ instance Applicative Identity where
 {-# SPECIALIZE applicativeTree :: Int -> Int -> State s a -> State s (FingerTree a) #-}
 {-# SPECIALIZE applicativeTree :: Int -> Int -> Identity a -> Identity (FingerTree a) #-}
 -- Special note: the Identity specialization automatically does node sharing,
--- reducing memory usage of the resulting tree to /O(log n)/.
+-- reducing memory usage of the resulting tree to \(O(\log n)\).
 applicativeTree :: Applicative f => Int -> Int -> f a -> f (FingerTree a)
 applicativeTree n !mSize m = case n of
     0 -> pure EmptyT
@@ -1709,17 +1708,10 @@ replicateA n x
 --
 -- For @base >= 4.8.0@ and @containers >= 0.5.11@, 'replicateM'
 -- is a synonym for 'replicateA'.
-#if MIN_VERSION_base(4,8,0)
 replicateM :: Applicative m => Int -> m a -> m (Seq a)
 replicateM = replicateA
-#else
-replicateM :: Monad m => Int -> m a -> m (Seq a)
-replicateM n x
-  | n >= 0      = Applicative.unwrapMonad (replicateA n (Applicative.WrapMonad x))
-  | otherwise   = error "replicateM takes a nonnegative integer argument"
-#endif
 
--- | /O(/log/ k)/. @'cycleTaking' k xs@ forms a sequence of length @k@ by
+-- | \(O(\log k)\). @'cycleTaking' k xs@ forms a sequence of length @k@ by
 -- repeatedly concatenating @xs@ with itself. @xs@ may only be empty if
 -- @k@ is 0.
 --
@@ -2178,9 +2170,10 @@ deriving instance Generic1 ViewL
 
 -- | @since 0.5.8
 deriving instance Generic (ViewL a)
-#endif
 
-INSTANCE_TYPEABLE1(ViewL)
+-- | @since FIXME
+deriving instance TH.Lift a => TH.Lift (ViewL a)
+#endif
 
 instance Functor ViewL where
     {-# INLINE fmap #-}
@@ -2188,6 +2181,9 @@ instance Functor ViewL where
     fmap f (x :< xs)    = f x :< fmap f xs
 
 instance Foldable ViewL where
+    foldMap _ EmptyL = mempty
+    foldMap f (x :< xs) = f x <> foldMap f xs
+
     foldr _ z EmptyL = z
     foldr f z (x :< xs) = f x (foldr f z xs)
 
@@ -2197,13 +2193,11 @@ instance Foldable ViewL where
     foldl1 _ EmptyL = error "foldl1: empty view"
     foldl1 f (x :< xs) = foldl f x xs
 
-#if MIN_VERSION_base(4,8,0)
     null EmptyL = True
     null (_ :< _) = False
 
     length EmptyL = 0
     length (_ :< xs) = 1 + length xs
-#endif
 
 instance Traversable ViewL where
     traverse _ EmptyL       = pure EmptyL
@@ -2243,9 +2237,10 @@ deriving instance Generic1 ViewR
 
 -- | @since 0.5.8
 deriving instance Generic (ViewR a)
-#endif
 
-INSTANCE_TYPEABLE1(ViewR)
+-- | @since FIXME
+deriving instance TH.Lift a => TH.Lift (ViewR a)
+#endif
 
 instance Functor ViewR where
     {-# INLINE fmap #-}
@@ -2264,13 +2259,12 @@ instance Foldable ViewR where
 
     foldr1 _ EmptyR = error "foldr1: empty view"
     foldr1 f (xs :> x) = foldr f x xs
-#if MIN_VERSION_base(4,8,0)
+
     null EmptyR = True
     null (_ :> _) = False
 
     length EmptyR = 0
     length (xs :> _) = length xs + 1
-#endif
 
 instance Traversable ViewR where
     traverse _ EmptyR       = pure EmptyR
@@ -2351,7 +2345,7 @@ index (Seq xs) i
   -- See note on unsigned arithmetic in splitAt
   | fromIntegral i < (fromIntegral (size xs) :: Word) = case lookupTree i xs of
                 Place _ (Elem x) -> x
-  | otherwise   = 
+  | otherwise   =
       error $ "index out of bounds in call to: Data.Strict.Sequence.Autogen.index " ++ show i
 
 -- | \( O(\log(\min(i,n-i))) \). The element at the specified position,
@@ -2528,7 +2522,7 @@ updateDigit v i (Four a b c d)
 --
 -- @since 0.5.8
 adjust          :: forall a . (a -> a) -> Int -> Seq a -> Seq a
-#if __GLASGOW_HASKELL__ >= 708
+#ifdef __GLASGOW_HASKELL__
 adjust f i xs
   -- See note on unsigned arithmetic in splitAt
   | fromIntegral i < (fromIntegral (length xs) :: Word) =
@@ -3136,7 +3130,7 @@ foldMapWithIndex :: Monoid m => (Int -> a -> m) -> Seq a -> m
 foldMapWithIndex f' (Seq xs') = foldMapWithIndexTreeE (lift_elem f') 0 xs'
  where
   lift_elem :: (Int -> a -> m) -> (Int -> Elem a -> m)
-#if __GLASGOW_HASKELL__ >= 708
+#ifdef __GLASGOW_HASKELL__
   lift_elem g = coerce g
 #else
   lift_elem g = \s (Elem a) -> g s a
@@ -3333,7 +3327,7 @@ fromFunction len f | len < 0 = error "Data.Strict.Sequence.Autogen.fromFunction 
         {-# INLINE mb #-}
 
     lift_elem :: (Int -> a) -> (Int -> Elem a)
-#if __GLASGOW_HASKELL__ >= 708
+#ifdef __GLASGOW_HASKELL__
     lift_elem g = coerce g
 #else
     lift_elem g = Elem . g
@@ -3350,8 +3344,8 @@ fromArray :: Ix i => Array i a -> Seq a
 #ifdef __GLASGOW_HASKELL__
 fromArray a = fromFunction (GHC.Arr.numElements a) (GHC.Arr.unsafeAt a)
  where
-  -- The following definition uses (Ix i) constraing, which is needed for the
-  -- other fromArray definition.
+  -- The following definition uses an (Ix i) constraint, which is needed for
+  -- the other fromArray definition.
   _ = Data.Array.rangeSize (Data.Array.bounds a)
 #else
 fromArray a = fromList2 (Data.Array.rangeSize (Data.Array.bounds a)) (Data.Array.elems a)
@@ -4368,7 +4362,7 @@ fromList = Seq . mkTree . map_elem
             !n10 = Node3 (3*s) n1 n2 n3
 
     map_elem :: [a] -> [Elem a]
-#if __GLASGOW_HASKELL__ >= 708
+#ifdef __GLASGOW_HASKELL__
     map_elem xs = coerce xs
 #else
     map_elem xs = Data.List.map Elem xs
@@ -4378,7 +4372,7 @@ fromList = Seq . mkTree . map_elem
 -- essentially: Free ((,) a) b.
 data ListFinal a cont = LFinal !cont | LCons !a (ListFinal a cont)
 
-#if __GLASGOW_HASKELL__ >= 708
+#ifdef __GLASGOW_HASKELL__
 instance GHC.Exts.IsList (Seq a) where
     type Item (Seq a) = a
     fromList = fromList
@@ -4409,7 +4403,7 @@ fmapReverse :: (a -> b) -> Seq a -> Seq b
 fmapReverse f (Seq xs) = Seq (fmapReverseTree (lift_elem f) xs)
   where
     lift_elem :: (a -> b) -> (Elem a -> Elem b)
-#if __GLASGOW_HASKELL__ >= 708
+#ifdef __GLASGOW_HASKELL__
     lift_elem = coerce
 #else
     lift_elem g (Elem a) = Elem (g a)
@@ -4737,7 +4731,7 @@ class UnzipWith f where
 -- This instance is only used at the very top of the tree;
 -- the rest of the elements are handled by unzipWithNodeElem
 instance UnzipWith Elem where
-#if __GLASGOW_HASKELL__ >= 708
+#ifdef __GLASGOW_HASKELL__
   unzipWith' = coerce
 #else
   unzipWith' f (Elem a) = case f a of (x, y) -> (Elem x, Elem y)

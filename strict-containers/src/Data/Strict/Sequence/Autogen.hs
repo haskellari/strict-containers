@@ -78,7 +78,7 @@
 --
 -- == Detailed performance information
 --
--- An amortized running time is given for each operation, with /n/ referring
+-- An amortized running time is given for each operation, with \(n\) referring
 -- to the length of the sequence and /i/ being the integral index used by
 -- some operations. These bounds hold even in a persistent (shared) setting.
 --
@@ -296,7 +296,7 @@ onto the beginning of the second one.
 shift2Right :: Seq a -> Seq a -> (Seq a, Seq a)
 shift2Right Empty ys = (Empty, ys)
 shift2Right (Empty :|> x) ys = (Empty, x :<| ys)
-shift2Right (xs :|> x1 :|> x2) = (xs, x1 :<| x2 :<| ys)
+shift2Right (xs :|> x1 :|> x2) ys = (xs, x1 :<| x2 :<| ys)
 @
 
 @

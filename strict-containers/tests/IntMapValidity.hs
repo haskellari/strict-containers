@@ -2,7 +2,7 @@ module IntMapValidity (valid) where
 
 import Data.Bits (xor, (.&.))
 import Data.Strict.IntMap.Autogen.Internal
-import Test.QuickCheck (Property, counterexample, property, (.&&.))
+import Test.Tasty.QuickCheck (Property, counterexample, property, (.&&.))
 import Data.Strict.ContainersUtils.Autogen.BitUtil (bitcount)
 
 {--------------------------------------------------------------------

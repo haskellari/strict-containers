@@ -55,7 +55,7 @@
 --
 -- == Detailed performance information
 --
--- The amortized running time is given for each operation, with /n/ referring to
+-- The amortized running time is given for each operation, with \(n\) referring to
 -- the number of entries in the map.
 --
 -- Benchmarks comparing "Data.Strict.Map.Autogen.Strict" with other dictionary implementations
@@ -108,6 +108,7 @@ module Data.Strict.Map.Autogen.Strict
     , empty
     , singleton
     , fromSet
+    , fromArgSet
 
     -- ** From Unordered Lists
     , fromList
@@ -223,6 +224,7 @@ module Data.Strict.Map.Autogen.Strict
     , keys
     , assocs
     , keysSet
+    , argSet
 
     -- ** Lists
     , toList
