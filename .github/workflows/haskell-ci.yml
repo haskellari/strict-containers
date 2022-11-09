@@ -178,7 +178,7 @@ jobs:
           echo "packages: $GITHUB_WORKSPACE/source/strict-containers" >> cabal.project
           echo "packages: $GITHUB_WORKSPACE/source/strict-containers-lens" >> cabal.project
           echo "packages: $GITHUB_WORKSPACE/source/strict-containers-serialise" >> cabal.project
-          echo "packages: $GITHUB_WORKSPACE/source/strict-containers-tests" >> cabal.project
+          if [ $((HCNUMVER >= 80600)) -ne 0 ] ; then echo "packages: $GITHUB_WORKSPACE/source/strict-containers-tests" >> cabal.project ; fi
           cat cabal.project
       - name: sdist
         run: |
@@ -204,15 +204,15 @@ jobs:
           echo "packages: ${PKGDIR_strict_containers}" >> cabal.project
           echo "packages: ${PKGDIR_strict_containers_lens}" >> cabal.project
           echo "packages: ${PKGDIR_strict_containers_serialise}" >> cabal.project
-          echo "packages: ${PKGDIR_strict_containers_tests}" >> cabal.project
+          if [ $((HCNUMVER >= 80600)) -ne 0 ] ; then echo "packages: ${PKGDIR_strict_containers_tests}" >> cabal.project ; fi
           echo "package strict-containers" >> cabal.project
           echo "    ghc-options: -Werror=missing-methods" >> cabal.project
           echo "package strict-containers-lens" >> cabal.project
           echo "    ghc-options: -Werror=missing-methods" >> cabal.project
           echo "package strict-containers-serialise" >> cabal.project
           echo "    ghc-options: -Werror=missing-methods" >> cabal.project
-          echo "package strict-containers-tests" >> cabal.project
-          echo "    ghc-options: -Werror=missing-methods" >> cabal.project
+          if [ $((HCNUMVER >= 80600)) -ne 0 ] ; then echo "package strict-containers-tests" >> cabal.project ; fi
+          if [ $((HCNUMVER >= 80600)) -ne 0 ] ; then echo "    ghc-options: -Werror=missing-methods" >> cabal.project ; fi
           cat >> cabal.project <<EOF
           EOF
           $HCPKG list --simple-output --names-only | perl -ne 'for (split /\s+/) { print "constraints: $_ installed\n" unless /^(binary|containers|ghc-heap|strict-containers|strict-containers-lens|strict-containers-serialise|strict-containers-tests|text)$/; }' >> cabal.project.local
@@ -245,8 +245,8 @@ jobs:
           ${CABAL} -vnormal check
           cd ${PKGDIR_strict_containers_serialise} || false
           ${CABAL} -vnormal check
-          cd ${PKGDIR_strict_containers_tests} || false
-          ${CABAL} -vnormal check
+          if [ $((HCNUMVER >= 80600)) -ne 0 ] ; then cd ${PKGDIR_strict_containers_tests} || false ; fi
+          if [ $((HCNUMVER >= 80600)) -ne 0 ] ; then ${CABAL} -vnormal check ; fi
       - name: haddock
         run: |
           $CABAL v2-haddock --haddock-all $ARG_COMPILER --with-haddock $HADDOCK $ARG_TESTS $ARG_BENCH all

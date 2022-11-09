@@ -7,11 +7,7 @@ module Main (main) where
 import Test.Tasty (TestTree, defaultMain, testGroup)
 import Test.Tasty.HUnit
 
-#if __GLASGOW_HASKELL__ >= 806
 import GHC.Exts.Heap
-#else
-import GHC.HeapView
-#endif
 
 import qualified Data.Strict.HashMap as SHM
 import qualified Data.Strict.IntMap as SIM

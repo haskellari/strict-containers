@@ -11,9 +11,7 @@ Homepage:       https://github.com/haskellari/strict-containers
 Cabal-Version: >= 1.10
 Build-type:     Simple
 tested-with:
-  GHC ==8.2.2
-   || ==8.4.4
-   || ==8.6.5
+  GHC ==8.6.5
    || ==8.8.4
    || ==8.10.7
    || ==9.0.2
@@ -38,13 +36,9 @@ test-suite strictness-tests
     , strict                >= 0.4      && < 0.5
     , vector                >= 0.13.0.0 && < 0.14
 
-  if impl(ghc >= 8.6)
-    build-depends: ghc-heap
-  else
-    build-depends: ghc-heap-view
-
   build-depends:
-      HUnit
+      ghc-heap
+    , HUnit
     , QuickCheck                  >=2.7.1
     , tasty
     , tasty-hunit
