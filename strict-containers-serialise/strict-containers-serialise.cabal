@@ -14,8 +14,7 @@ Build-type:     Simple
 extra-source-files:
     CHANGELOG.md
 tested-with:
-  GHC ==8.2.2
-   || ==8.4.4
+  GHC ==8.4.4
    || ==8.6.5
    || ==8.8.4
    || ==8.10.7
@@ -28,11 +27,11 @@ library
   ghc-options:      -Wall
 
   build-depends:
-      base                  >= 4.5.0.0  && < 5
-    , cborg                 >= 0.2      && < 0.3
-    , hashable              >= 1.2.7.0  && < 1.5
-    , strict-containers     >= 0.1
-    , serialise             >= 0.2.3.0  && < 0.3
+      base                  >= 4.11.0.0  && < 5
+    , cborg                 >= 0.2       && < 0.3
+    , hashable              >= 1.2.7.0   && < 1.5
+    , strict-containers     >= 0.2
+    , serialise             >= 0.2.6.0   && < 0.3
 
   exposed-modules:
     Data.Strict.Containers.Serialise

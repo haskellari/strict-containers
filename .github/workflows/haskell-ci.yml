@@ -177,7 +177,7 @@ jobs:
           touch cabal.project
           echo "packages: $GITHUB_WORKSPACE/source/strict-containers" >> cabal.project
           echo "packages: $GITHUB_WORKSPACE/source/strict-containers-lens" >> cabal.project
-          echo "packages: $GITHUB_WORKSPACE/source/strict-containers-serialise" >> cabal.project
+          if [ $((HCNUMVER >= 80400)) -ne 0 ] ; then echo "packages: $GITHUB_WORKSPACE/source/strict-containers-serialise" >> cabal.project ; fi
           if [ $((HCNUMVER >= 80600)) -ne 0 ] ; then echo "packages: $GITHUB_WORKSPACE/source/strict-containers-tests" >> cabal.project ; fi
           cat cabal.project
       - name: sdist
@@ -203,14 +203,14 @@ jobs:
           touch cabal.project.local
           echo "packages: ${PKGDIR_strict_containers}" >> cabal.project
           echo "packages: ${PKGDIR_strict_containers_lens}" >> cabal.project
-          echo "packages: ${PKGDIR_strict_containers_serialise}" >> cabal.project
+          if [ $((HCNUMVER >= 80400)) -ne 0 ] ; then echo "packages: ${PKGDIR_strict_containers_serialise}" >> cabal.project ; fi
           if [ $((HCNUMVER >= 80600)) -ne 0 ] ; then echo "packages: ${PKGDIR_strict_containers_tests}" >> cabal.project ; fi
           echo "package strict-containers" >> cabal.project
           echo "    ghc-options: -Werror=missing-methods" >> cabal.project
           echo "package strict-containers-lens" >> cabal.project
           echo "    ghc-options: -Werror=missing-methods" >> cabal.project
-          echo "package strict-containers-serialise" >> cabal.project
-          echo "    ghc-options: -Werror=missing-methods" >> cabal.project
+          if [ $((HCNUMVER >= 80400)) -ne 0 ] ; then echo "package strict-containers-serialise" >> cabal.project ; fi
+          if [ $((HCNUMVER >= 80400)) -ne 0 ] ; then echo "    ghc-options: -Werror=missing-methods" >> cabal.project ; fi
           if [ $((HCNUMVER >= 80600)) -ne 0 ] ; then echo "package strict-containers-tests" >> cabal.project ; fi
           if [ $((HCNUMVER >= 80600)) -ne 0 ] ; then echo "    ghc-options: -Werror=missing-methods" >> cabal.project ; fi
           cat >> cabal.project <<EOF
@@ -243,8 +243,8 @@ jobs:
           ${CABAL} -vnormal check
           cd ${PKGDIR_strict_containers_lens} || false
           ${CABAL} -vnormal check
-          cd ${PKGDIR_strict_containers_serialise} || false
-          ${CABAL} -vnormal check
+          if [ $((HCNUMVER >= 80400)) -ne 0 ] ; then cd ${PKGDIR_strict_containers_serialise} || false ; fi
+          if [ $((HCNUMVER >= 80400)) -ne 0 ] ; then ${CABAL} -vnormal check ; fi
           if [ $((HCNUMVER >= 80600)) -ne 0 ] ; then cd ${PKGDIR_strict_containers_tests} || false ; fi
           if [ $((HCNUMVER >= 80600)) -ne 0 ] ; then ${CABAL} -vnormal check ; fi
       - name: haddock
