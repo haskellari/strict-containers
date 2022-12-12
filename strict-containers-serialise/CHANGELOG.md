@@ -1,6 +1,9 @@
 # Revision history for strict-containers-serialise
 
-## 0.1.1 -- UNRELEASED
+## 0.2 -- UNRELEASED
+
+- Update to strict-containers v0.2, includes support for GHC 9.4. Drop support
+  for GHC 8.2 (base < 4.11).
 
 ## 0.1 -- 2021-04-20
 
