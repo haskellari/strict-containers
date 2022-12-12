@@ -1,6 +1,6 @@
 # Revision history for strict-containers-lens
 
-## 0.2 -- UNRELEASED
+## 0.2 -- 2022-12-12
 
 - Update to strict-containers v0.2, includes support for GHC 9.4.
 
