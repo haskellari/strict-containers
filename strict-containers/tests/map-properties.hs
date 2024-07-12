@@ -25,7 +25,7 @@ import qualified Data.Foldable as Foldable
 #if MIN_VERSION_base(4,10,0)
 import qualified Data.Bifoldable as Bifoldable
 #endif
-import Prelude hiding (lookup, null, map, filter, foldr, foldl, take, drop, splitAt)
+import Prelude hiding (lookup, null, map, filter, foldr, foldl, foldl', take, drop, splitAt)
 import qualified Prelude
 
 import Data.List (nub,sort)

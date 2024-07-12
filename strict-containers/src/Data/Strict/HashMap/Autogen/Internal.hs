@@ -158,7 +158,7 @@ import Data.Strict.HashMap.Autogen.Internal.List (isPermutationBy, unorderedComp
 import Data.Semigroup             (Semigroup (..), stimesIdempotentMonoid)
 import GHC.Exts                   (Int (..), Int#, TYPE, (==#))
 import GHC.Stack                  (HasCallStack)
-import Prelude                    hiding (filter, foldl, foldr, lookup, map,
+import Prelude                    hiding (filter, foldl, foldl', foldr, lookup, map,
                                    null, pred)
 import Text.Read                  hiding (step)
 

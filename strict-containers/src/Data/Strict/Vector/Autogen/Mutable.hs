@@ -76,7 +76,7 @@ import           Data.Strict.Vector.Autogen.Internal.Check
 import           Data.Primitive.Array
 import           Control.Monad.Primitive
 
-import Prelude hiding ( length, null, replicate, reverse, read,
+import Prelude hiding ( length, foldl', null, replicate, reverse, read,
                         take, drop, splitAt, init, tail, foldr, foldl, mapM_ )
 
 import Data.Typeable ( Typeable )

@@ -255,7 +255,7 @@ module Data.Strict.IntMap.Autogen.Strict.Internal (
 #endif
     ) where
 
-import Prelude hiding (lookup,map,filter,foldr,foldl,null)
+import Prelude hiding (lookup,map,filter,foldr,foldl,foldl',null)
 
 import Data.Bits
 import qualified Data.Strict.IntMap.Autogen.Internal as L
