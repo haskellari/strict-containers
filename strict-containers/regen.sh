@@ -9,7 +9,7 @@ shopt -s nullglob globstar
 ensure_checkout() {
 	local pkg="$1"
 	local ver="$2"
-	( cd ../contrib/"$pkg" && git checkout "$ver" )
+	( cd ../contrib/"$pkg" && git fetch --all --tags && git checkout "$ver" )
 	echo "  * $pkg $ver" >> "$VERSIONS_CABAL"
 }
 
