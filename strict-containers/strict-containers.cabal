@@ -41,7 +41,7 @@ Description:
 -- DO NOT EDIT below, AUTOGEN versions
   * containers v0.6.6
   * unordered-containers v0.2.20
-  * vector vector-0.13.0.0
+  * vector vector-0.13.1.0
 -- DO NOT EDIT above, AUTOGEN versions
 License:        BSD-3-Clause
 License-File:   LICENSE

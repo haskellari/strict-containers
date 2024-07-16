@@ -1,4 +1,5 @@
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE TypeOperators #-}
 module Tests.Vector.Property
   ( CommonContext
   , VanillaContext
@@ -31,6 +32,7 @@ import Control.Monad
 import Control.Monad.ST
 import qualified Data.Traversable as T (Traversable(..))
 import Data.Orphans ()
+import Data.Maybe
 import Data.Foldable (foldrM)
 import qualified Data.Vector.Generic as V
 import qualified Data.Vector.Generic.Mutable as MV

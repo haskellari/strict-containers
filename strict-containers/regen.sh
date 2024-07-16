@@ -113,7 +113,7 @@ if [ -z "$CLEAN" ]; then
 	rm -f $VERSIONS_CABAL
 	ensure_checkout containers v0.6.6
 	ensure_checkout unordered-containers v0.2.20
-	ensure_checkout vector vector-0.13.0.0
+	ensure_checkout vector vector-0.13.1.0
 	cat $VERSIONS_CABAL | fixup_cabal versions ""
 	rm -f $VERSIONS_CABAL
 else
