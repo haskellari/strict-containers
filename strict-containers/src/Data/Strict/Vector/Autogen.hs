@@ -125,7 +125,7 @@ module Data.Strict.Vector.Autogen (
   partition, unstablePartition, partitionWith, span, break, groupBy, group,
 
   -- ** Searching
-  elem, notElem, find, findIndex, findIndices, elemIndex, elemIndices,
+  elem, notElem, find, findIndex, findIndexR, findIndices, elemIndex, elemIndices,
 
   -- * Folding
   foldl, foldl1, foldl', foldl1', foldr, foldr1, foldr', foldr1',
@@ -187,6 +187,9 @@ import Control.DeepSeq ( NFData(rnf)
                        )
 
 import Control.Monad ( MonadPlus(..), liftM, ap )
+#if !MIN_VERSION_base(4,13,0)
+import Control.Monad (fail)
+#endif
 import Control.Monad.ST ( ST, runST )
 import Control.Monad.Primitive
 import qualified Control.Monad.Fail as Fail
@@ -194,19 +197,10 @@ import Control.Monad.Fix ( MonadFix (mfix) )
 import Control.Monad.Zip
 import Data.Function ( fix )
 
-import Prelude hiding ( length, null,
-                        replicate, (++), concat,
-                        head, last,
-                        init, tail, take, drop, splitAt, reverse,
-                        map, concatMap,
-                        zipWith, zipWith3, zip, zip3, unzip, unzip3,
-                        filter, takeWhile, dropWhile, span, break,
-                        elem, notElem,
-                        foldl, foldl1, foldr, foldr1, foldMap,
-                        all, any, and, or, sum, product, minimum, maximum,
-                        scanl, scanl1, scanr, scanr1,
-                        enumFromTo, enumFromThenTo,
-                        mapM, mapM_, sequence, sequence_ )
+import Prelude
+  ( Eq, Ord, Num, Enum, Monoid, Functor, Monad, Show, Bool, Ordering(..), Int, Maybe, Either
+  , compare, mempty, mappend, mconcat, return, showsPrec, fmap, otherwise, id, flip, const, seq
+  , (>>=), (+), (-), (<), (<=), (>), (>=), (==), (/=), (&&), (.), ($) )
 
 import Data.Functor.Classes (Eq1 (..), Ord1 (..), Read1 (..), Show1 (..))
 import Data.Typeable  ( Typeable )
@@ -1068,13 +1062,16 @@ unsafeBackpermute = G.unsafeBackpermute
 -- Safe destructive updates
 -- ------------------------
 
--- | Apply a destructive operation to a vector. The operation will be
+-- | Apply a destructive operation to a vector. The operation may be
 -- performed in place if it is safe to do so and will modify a copy of the
--- vector otherwise.
+-- vector otherwise (see 'Data.Strict.Vector.Autogen.Generic.New.New' for details).
 --
--- @
--- modify (\\v -> write v 0 \'x\') ('replicate' 3 \'a\') = \<\'x\',\'a\',\'a\'\>
--- @
+-- ==== __Examples__
+--
+-- >>> import qualified Data.Strict.Vector.Autogen as V
+-- >>> import qualified Data.Strict.Vector.Autogen.Mutable as MV
+-- >>> V.modify (\v -> MV.write v 0 'x') $ V.replicate 4 'a'
+-- "xaaa"
 modify :: (forall s. MVector s a -> ST s ()) -> Vector a -> Vector a
 {-# INLINE modify #-}
 modify p = G.modify p
@@ -1482,6 +1479,14 @@ find = G.find
 findIndex :: (a -> Bool) -> Vector a -> Maybe Int
 {-# INLINE findIndex #-}
 findIndex = G.findIndex
+
+-- | /O(n)/ Yield 'Just' the index of the /last/ element matching the predicate
+-- or 'Nothing' if no such element exists.
+--
+-- Does not fuse.
+findIndexR :: (a -> Bool) -> Vector a -> Maybe Int
+{-# INLINE findIndexR #-}
+findIndexR = G.findIndexR
 
 -- | /O(n)/ Yield the indices of elements satisfying the predicate in ascending
 -- order.
@@ -2250,3 +2255,4 @@ copy = G.copy
 
 -- $setup
 -- >>> :set -Wno-type-defaults
+-- >>> import Prelude (Char, String, Bool(True, False), min, max, fst, even, undefined)
