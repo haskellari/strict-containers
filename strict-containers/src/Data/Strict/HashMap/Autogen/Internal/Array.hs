@@ -52,7 +52,6 @@ module Data.Strict.HashMap.Autogen.Internal.Array
     , insertM
     , delete
     , sameArray1
-    , trim
 
     , unsafeFreeze
     , unsafeThaw
@@ -60,6 +59,7 @@ module Data.Strict.HashMap.Autogen.Internal.Array
     , run
     , copy
     , copyM
+    , cloneM
 
       -- * Folds
     , foldl
@@ -94,7 +94,7 @@ import GHC.Exts            (Int (..), SmallArray#, SmallMutableArray#,
                             unsafeFreezeSmallArray#, unsafeThawSmallArray#,
                             writeSmallArray#)
 import GHC.ST              (ST (..))
-import Prelude             hiding (all, filter, foldMap, foldl, foldr, length,
+import Prelude             hiding (Foldable(..), all, filter,
                             map, read, traverse)
 
 import qualified GHC.Exts                   as Exts
@@ -322,11 +322,6 @@ cloneM _mary@(MArray mary#) _off@(I# off#) _len@(I# len#) =
     case cloneSmallMutableArray# mary# off# len# s of
       (# s', mary'# #) -> (# s', MArray mary'# #)
 
--- | Create a new array of the @n@ first elements of @mary@.
-trim :: MArray s a -> Int -> ST s (Array a)
-trim mary n = cloneM mary 0 n >>= unsafeFreeze
-{-# INLINE trim #-}
-
 -- | \(O(n)\) Insert an element at the given position in this array,
 -- increasing its size by one.
 insert :: Array e -> Int -> e -> Array e
@@ -360,7 +355,7 @@ updateM ary idx b =
   where !count = length ary
 {-# INLINE updateM #-}
 
--- | \(O(n)\) Update the element at the given positio in this array, by
+-- | \(O(n)\) Update the element at the given position in this array, by
 -- applying a function to it.  Evaluates the element to WHNF before
 -- inserting it into the array.
 updateWith' :: Array e -> Int -> (e -> e) -> Array e

@@ -40,7 +40,7 @@ Description:
 -- generated list for versions
 -- DO NOT EDIT below, AUTOGEN versions
   * containers v0.6.6
-  * unordered-containers v0.2.19.1
+  * unordered-containers v0.2.20
   * vector vector-0.13.0.0
 -- DO NOT EDIT above, AUTOGEN versions
 License:        BSD-3-Clause
@@ -53,8 +53,8 @@ extra-source-files:
     CHANGELOG.md
     -- generated list for includes
     -- DO NOT EDIT below, AUTOGEN includes
-    include/vector.h
     include/containers.h
+    include/vector.h
     -- DO NOT EDIT above, AUTOGEN includes
 tested-with:
   GHC ==8.2.2
@@ -93,35 +93,36 @@ library
     Data.Strict.HashMap.Internal
     -- generated list for HashMap
     -- DO NOT EDIT below, AUTOGEN HashMap
-    Data.Strict.HashMap.Autogen.Strict
     Data.Strict.HashMap.Autogen.Internal
-    Data.Strict.HashMap.Autogen.Internal.Array
-    Data.Strict.HashMap.Autogen.Internal.Strict
     Data.Strict.HashMap.Autogen.Internal.List
+    Data.Strict.HashMap.Autogen.Internal.Array
+    Data.Strict.HashMap.Autogen.Internal.Debug
+    Data.Strict.HashMap.Autogen.Internal.Strict
+    Data.Strict.HashMap.Autogen.Strict
     -- DO NOT EDIT above, AUTOGEN HashMap
     Data.Strict.HashSet
     Data.Strict.IntMap
     Data.Strict.IntMap.Internal
     -- generated list for IntMap
     -- DO NOT EDIT below, AUTOGEN IntMap
-    Data.Strict.IntMap.Autogen.Strict
-    Data.Strict.IntMap.Autogen.Internal
-    Data.Strict.IntMap.Autogen.Merge.Strict
     Data.Strict.IntMap.Autogen.Strict.Internal
-    Data.Strict.IntMap.Autogen.Internal.Debug
+    Data.Strict.IntMap.Autogen.Internal
     Data.Strict.IntMap.Autogen.Internal.DeprecatedDebug
+    Data.Strict.IntMap.Autogen.Internal.Debug
+    Data.Strict.IntMap.Autogen.Strict
+    Data.Strict.IntMap.Autogen.Merge.Strict
     -- DO NOT EDIT above, AUTOGEN IntMap
     Data.Strict.IntSet
     Data.Strict.Map
     Data.Strict.Map.Internal
     -- generated list for Map
     -- DO NOT EDIT below, AUTOGEN Map
-    Data.Strict.Map.Autogen.Strict
-    Data.Strict.Map.Autogen.Internal
-    Data.Strict.Map.Autogen.Merge.Strict
     Data.Strict.Map.Autogen.Strict.Internal
+    Data.Strict.Map.Autogen.Internal
     Data.Strict.Map.Autogen.Internal.Debug
     Data.Strict.Map.Autogen.Internal.DeprecatedShowTree
+    Data.Strict.Map.Autogen.Strict
+    Data.Strict.Map.Autogen.Merge.Strict
     -- DO NOT EDIT above, AUTOGEN Map
     Data.Strict.Sequence
     Data.Strict.Sequence.Internal
@@ -134,22 +135,22 @@ library
     Data.Strict.Set
     -- generated list for ContainersUtils
     -- DO NOT EDIT below, AUTOGEN ContainersUtils
-    Data.Strict.ContainersUtils.Autogen.Coercions
-    Data.Strict.ContainersUtils.Autogen.BitUtil
-    Data.Strict.ContainersUtils.Autogen.StrictPair
-    Data.Strict.ContainersUtils.Autogen.StrictMaybe
     Data.Strict.ContainersUtils.Autogen.PtrEquality
-    Data.Strict.ContainersUtils.Autogen.State
     Data.Strict.ContainersUtils.Autogen.BitQueue
     Data.Strict.ContainersUtils.Autogen.TypeError
+    Data.Strict.ContainersUtils.Autogen.StrictMaybe
+    Data.Strict.ContainersUtils.Autogen.StrictPair
+    Data.Strict.ContainersUtils.Autogen.State
+    Data.Strict.ContainersUtils.Autogen.BitUtil
+    Data.Strict.ContainersUtils.Autogen.Coercions
     -- DO NOT EDIT above, AUTOGEN ContainersUtils
     Data.Strict.Vector
     Data.Strict.Vector.Internal
     -- generated list for Vector
     -- DO NOT EDIT below, AUTOGEN Vector
     Data.Strict.Vector.Autogen
-    Data.Strict.Vector.Autogen.Mutable
     Data.Strict.Vector.Autogen.Internal.Check
+    Data.Strict.Vector.Autogen.Mutable
     -- DO NOT EDIT above, AUTOGEN Vector
 
   include-dirs: include

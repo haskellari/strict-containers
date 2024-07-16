@@ -130,8 +130,8 @@ import Data.Functor.Identity (Identity (..))
 -- See Note [Imports from Data.Strict.HashMap.Autogen.Internal]
 import Data.Hashable         (Hashable)
 import Data.Strict.HashMap.Autogen.Internal (Hash, HashMap (..), Leaf (..), LookupRes (..),
-                              bitsPerSubkey, fullNodeMask, hash, index, mask,
-                              ptrEq, sparseIndex)
+                              fullBitmap, hash, index, mask, nextShift, ptrEq,
+                              sparseIndex)
 import Prelude               hiding (lookup, map)
 
 -- See Note [Imports from Data.Strict.HashMap.Autogen.Internal]
@@ -203,14 +203,14 @@ insertWith f k0 v0 m0 = go h0 k0 v0 0 m0
             in HM.bitmapIndexedOrFull (b .|. m) ary'
         | otherwise =
             let st   = A.index ary i
-                st'  = go h k x (s+bitsPerSubkey) st
+                st'  = go h k x (nextShift s) st
                 ary' = A.update ary i $! st'
             in BitmapIndexed b ary'
       where m = mask h s
             i = sparseIndex b m
     go h k x s (Full ary) =
         let st   = A.index ary i
-            st'  = go h k x (s+bitsPerSubkey) st
+            st'  = go h k x (nextShift s) st
             ary' = HM.update32 ary i $! st'
         in Full ary'
       where i = index h s
@@ -244,14 +244,14 @@ unsafeInsertWithKey f k0 v0 m0 = runST (go h0 k0 v0 0 m0)
             return $! HM.bitmapIndexedOrFull (b .|. m) ary'
         | otherwise = do
             st <- A.indexM ary i
-            st' <- go h k x (s+bitsPerSubkey) st
+            st' <- go h k x (nextShift s) st
             A.unsafeUpdateM ary i st'
             return t
       where m = mask h s
             i = sparseIndex b m
     go h k x s t@(Full ary) = do
         st <- A.indexM ary i
-        st' <- go h k x (s+bitsPerSubkey) st
+        st' <- go h k x (nextShift s) st
         A.unsafeUpdateM ary i st'
         return t
       where i = index h s
@@ -273,7 +273,7 @@ adjust f k0 m0 = go h0 k0 0 m0
     go h k s t@(BitmapIndexed b ary)
         | b .&. m == 0 = t
         | otherwise = let st   = A.index ary i
-                          st'  = go h k (s+bitsPerSubkey) st
+                          st'  = go h k (nextShift s) st
                           ary' = A.update ary i $! st'
                       in BitmapIndexed b ary'
       where m = mask h s
@@ -281,7 +281,7 @@ adjust f k0 m0 = go h0 k0 0 m0
     go h k s (Full ary) =
         let i    = index h s
             st   = A.index ary i
-            st'  = go h k (s+bitsPerSubkey) st
+            st'  = go h k (nextShift s) st
             ary' = HM.update32 ary i $! st'
         in Full ary'
     go h k _ t@(Collision hy v)
@@ -306,9 +306,18 @@ update f = alter (>>= f)
 -- @
 alter :: (Eq k, Hashable k) => (Maybe v -> Maybe v) -> k -> HashMap k v -> HashMap k v
 alter f k m =
-  case f (HM.lookup k m) of
-    Nothing -> HM.delete k m
-    Just v  -> insert k v m
+    let !h = hash k
+        !lookupRes = HM.lookupRecordCollision h k m
+    in case f (HM.lookupResToMaybe lookupRes) of
+        Nothing -> case lookupRes of
+            Absent            -> m
+            Present _ collPos -> HM.deleteKeyExists collPos h k m
+        Just !v' -> case lookupRes of
+            Absent             -> HM.insertNewKey h k v' m
+            Present v collPos ->
+                if v `ptrEq` v'
+                    then m
+                    else HM.insertKeyExists collPos h k v' m
 {-# INLINABLE alter #-}
 
 -- | \(O(\log n)\)  The expression (@'alterF' f k map@) alters the value @x@ at
@@ -429,9 +438,7 @@ alterFEager f !k !m = (<$> f mv) $ \fres ->
 
   where !h = hash k
         !lookupRes = HM.lookupRecordCollision h k m
-        !mv = case lookupRes of
-          Absent -> Nothing
-          Present v _ -> Just v
+        !mv = HM.lookupResToMaybe lookupRes
 {-# INLINABLE alterFEager #-}
 
 ------------------------------------------------------------------------
@@ -439,14 +446,14 @@ alterFEager f !k !m = (<$> f mv) $ \fres ->
 
 -- | \(O(n+m)\) The union of two maps.  If a key occurs in both maps,
 -- the provided function (first argument) will be used to compute the result.
-unionWith :: (Eq k, Hashable k) => (v -> v -> v) -> HashMap k v -> HashMap k v
+unionWith :: Eq k => (v -> v -> v) -> HashMap k v -> HashMap k v
           -> HashMap k v
 unionWith f = unionWithKey (const f)
 {-# INLINE unionWith #-}
 
 -- | \(O(n+m)\) The union of two maps.  If a key occurs in both maps,
 -- the provided function (first argument) will be used to compute the result.
-unionWithKey :: (Eq k, Hashable k) => (k -> v -> v -> v) -> HashMap k v -> HashMap k v
+unionWithKey :: Eq k => (k -> v -> v -> v) -> HashMap k v -> HashMap k v
           -> HashMap k v
 unionWithKey f = go 0
   where
@@ -471,16 +478,16 @@ unionWithKey f = go 0
     -- branch vs. branch
     go s (BitmapIndexed b1 ary1) (BitmapIndexed b2 ary2) =
         let b'   = b1 .|. b2
-            ary' = HM.unionArrayBy (go (s+bitsPerSubkey)) b1 b2 ary1 ary2
+            ary' = HM.unionArrayBy (go (nextShift s)) b1 b2 ary1 ary2
         in HM.bitmapIndexedOrFull b' ary'
     go s (BitmapIndexed b1 ary1) (Full ary2) =
-        let ary' = HM.unionArrayBy (go (s+bitsPerSubkey)) b1 fullNodeMask ary1 ary2
+        let ary' = HM.unionArrayBy (go (nextShift s)) b1 fullBitmap ary1 ary2
         in Full ary'
     go s (Full ary1) (BitmapIndexed b2 ary2) =
-        let ary' = HM.unionArrayBy (go (s+bitsPerSubkey)) fullNodeMask b2 ary1 ary2
+        let ary' = HM.unionArrayBy (go (nextShift s)) fullBitmap b2 ary1 ary2
         in Full ary'
     go s (Full ary1) (Full ary2) =
-        let ary' = HM.unionArrayBy (go (s+bitsPerSubkey)) fullNodeMask fullNodeMask
+        let ary' = HM.unionArrayBy (go (nextShift s)) fullBitmap fullBitmap
                    ary1 ary2
         in Full ary'
     -- leaf vs. branch
@@ -489,7 +496,7 @@ unionWithKey f = go 0
                                b'   = b1 .|. m2
                            in HM.bitmapIndexedOrFull b' ary'
         | otherwise      = let ary' = A.updateWith' ary1 i $ \st1 ->
-                                   go (s+bitsPerSubkey) st1 t2
+                                   go (nextShift s) st1 t2
                            in BitmapIndexed b1 ary'
         where
           h2 = leafHashCode t2
@@ -500,7 +507,7 @@ unionWithKey f = go 0
                                b'   = b2 .|. m1
                            in HM.bitmapIndexedOrFull b' ary'
         | otherwise      = let ary' = A.updateWith' ary2 i $ \st2 ->
-                                   go (s+bitsPerSubkey) t1 st2
+                                   go (nextShift s) t1 st2
                            in BitmapIndexed b2 ary'
       where
         h1 = leafHashCode t1
@@ -509,12 +516,12 @@ unionWithKey f = go 0
     go s (Full ary1) t2 =
         let h2   = leafHashCode t2
             i    = index h2 s
-            ary' = HM.update32With' ary1 i $ \st1 -> go (s+bitsPerSubkey) st1 t2
+            ary' = HM.update32With' ary1 i $ \st1 -> go (nextShift s) st1 t2
         in Full ary'
     go s t1 (Full ary2) =
         let h1   = leafHashCode t1
             i    = index h1 s
-            ary' = HM.update32With' ary2 i $ \st2 -> go (s+bitsPerSubkey) t1 st2
+            ary' = HM.update32With' ary2 i $ \st2 -> go (nextShift s) t1 st2
         in Full ary'
 
     leafHashCode (Leaf h _) = h
@@ -522,7 +529,7 @@ unionWithKey f = go 0
     leafHashCode _ = error "leafHashCode"
 
     goDifferentHash s h1 h2 t1 t2
-        | m1 == m2  = BitmapIndexed m1 (A.singleton $! goDifferentHash (s+bitsPerSubkey) h1 h2 t1 t2)
+        | m1 == m2  = BitmapIndexed m1 (A.singleton $! goDifferentHash (nextShift s) h1 h2 t1 t2)
         | m1 <  m2  = BitmapIndexed (m1 .|. m2) (A.pair t1 t2)
         | otherwise = BitmapIndexed (m1 .|. m2) (A.pair t2 t1)
       where
@@ -615,7 +622,7 @@ differenceWith f a b = HM.foldlWithKey' go HM.empty a
 -- | \(O(n+m)\) Intersection of two maps. If a key occurs in both maps
 -- the provided function is used to combine the values from the two
 -- maps.
-intersectionWith :: (Eq k, Hashable k) => (v1 -> v2 -> v3) -> HashMap k v1
+intersectionWith :: Eq k => (v1 -> v2 -> v3) -> HashMap k v1
                  -> HashMap k v2 -> HashMap k v3
 intersectionWith f = Exts.inline intersectionWithKey $ const f
 {-# INLINABLE intersectionWith #-}
@@ -623,7 +630,7 @@ intersectionWith f = Exts.inline intersectionWithKey $ const f
 -- | \(O(n+m)\) Intersection of two maps. If a key occurs in both maps
 -- the provided function is used to combine the values from the two
 -- maps.
-intersectionWithKey :: (Eq k, Hashable k) => (k -> v1 -> v2 -> v3)
+intersectionWithKey :: Eq k => (k -> v1 -> v2 -> v3)
                     -> HashMap k v1 -> HashMap k v2 -> HashMap k v3
 intersectionWithKey f = HM.intersectionWithKey# $ \k v1 v2 -> let !v3 = f k v1 v2 in (# v3 #)
 {-# INLINABLE intersectionWithKey #-}
@@ -661,7 +668,7 @@ fromList = List.foldl' (\ m (k, !v) -> HM.unsafeInsert k v m) HM.empty
 -- > = fromList [('a', [3, 1]), ('b', [2])]
 --
 -- Note that the lists in the resulting map contain elements in reverse order
--- from their occurences in the original list.
+-- from their occurrences in the original list.
 --
 -- More generally, duplicate entries are accumulated as follows;
 -- this matters when @f@ is not commutative or not associative.
