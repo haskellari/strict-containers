@@ -101,15 +101,36 @@
  import qualified Data.Vector.Unboxed as Unboxed
 --- a/tests/Utilities.hs
 +++ b/tests/Utilities.hs
-@@ -5,7 +5,7 @@
- import Test.QuickCheck
+@@ -8,6 +8,7 @@
  
  import Data.Foldable
--import qualified Data.Vector as DV
-+import qualified Data.Strict.Vector as DV
+ import Data.Bifunctor
++import qualified Data.Strict.Vector as DSV
+ import qualified Data.Vector as DV
  import qualified Data.Vector.Generic as DVG
  import qualified Data.Vector.Primitive as DVP
- import qualified Data.Vector.Storable as DVS
+@@ -100,6 +101,11 @@
+   model   = map model    . DVU.toList
+   unmodel = DVU.fromList . map unmodel
+ 
++instance (Eq a, TestData a) => TestData (DSV.Vector a) where
++  type Model (DSV.Vector a) = [Model a]
++  model   = map model    . DSV.toList
++  unmodel = DSV.fromList . map unmodel
++
+ #define id_TestData(ty) \
+ instance TestData ty where { \
+   type Model ty = ty;        \
+@@ -346,3 +352,9 @@
+     | ours >= 0
+     , Just (out, theirs') <- f theirs = Just (out, (theirs', ours - 1))
+     | otherwise                       = Nothing
++
++instance Arbitrary a => Arbitrary (DSV.Vector a) where
++  arbitrary = fmap DSV.fromList arbitrary
++
++instance CoArbitrary a => CoArbitrary (DSV.Vector a) where
++    coarbitrary = coarbitrary . DSV.toList
 --- a/tests/intmap-strictness.hs
 +++ b/tests/intmap-strictness.hs
 @@ -1,4 +1,5 @@
@@ -244,3 +265,14 @@
  
  
  -- DO NOT EDIT above, AUTOGEN tests
+--- a/strict-containers.cabal
++++ b/strict-containers.cabal
+@@ -162,7 +162,7 @@ common containers-deps
+   build-depends:
+       array    >=0.4.0.0
+     , base     >=4.10    && <5
+-    , deepseq  >=1.2     && <1.5
++    , deepseq  >=1.2     && <1.6
+     , template-haskell
+ 
+ common containers-test-deps
