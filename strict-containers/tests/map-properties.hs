@@ -22,10 +22,8 @@ import Data.Ord
 import Data.Semigroup (Arg(..))
 import Data.Function
 import qualified Data.Foldable as Foldable
-#if MIN_VERSION_base(4,10,0)
 import qualified Data.Bifoldable as Bifoldable
-#endif
-import Prelude hiding (lookup, null, map, filter, foldr, foldl, take, drop, splitAt)
+import Prelude hiding (lookup, null, map, filter, foldr, foldl, foldl', take, drop, splitAt)
 import qualified Prelude
 
 import Data.List (nub,sort)
@@ -187,6 +185,7 @@ main = defaultMain $ testGroup "map-properties"
          , testProperty "mergeWithKey model"   prop_mergeWithKeyModel
          , testProperty "mergeA effects"       prop_mergeA_effects
          , testProperty "fromAscList"          prop_ordered
+         , testProperty "fromDistinctAscList"  prop_fromDistinctAscList
          , testProperty "fromDescList"         prop_rev_ordered
          , testProperty "fromDistinctDescList" prop_fromDistinctDescList
          , testProperty "fromList then toList" prop_list
@@ -232,14 +231,12 @@ main = defaultMain $ testGroup "map-properties"
          , testProperty "foldlWithKey"         prop_foldlWithKey
          , testProperty "foldl'"               prop_foldl'
          , testProperty "foldlWithKey'"        prop_foldlWithKey'
-#if MIN_VERSION_base(4,10,0)
          , testProperty "bifold"               prop_bifold
          , testProperty "bifoldMap"            prop_bifoldMap
          , testProperty "bifoldr"              prop_bifoldr
          , testProperty "bifoldr'"             prop_bifoldr'
          , testProperty "bifoldl"              prop_bifoldl
          , testProperty "bifoldl'"             prop_bifoldl'
-#endif
          , testProperty "keysSet"              prop_keysSet
          , testProperty "argSet"               prop_argSet
          , testProperty "fromSet"              prop_fromSet
@@ -1243,10 +1240,13 @@ prop_list xs = (sort (nub xs) == [x | (x,()) <- toList (fromList [(x,()) | x <- 
 prop_descList :: [Int] -> Bool
 prop_descList xs = (reverse (sort (nub xs)) == [x | (x,()) <- toDescList (fromList [(x,()) | x <- xs])])
 
-prop_fromDistinctDescList :: Int -> [A] -> Property
-prop_fromDistinctDescList top lst = valid converted .&&. (toList converted === reverse original) where
-  original = zip [top, (top-1)..0] lst
-  converted = fromDistinctDescList original
+prop_fromDistinctDescList :: [(Int, A)] -> Property
+prop_fromDistinctDescList xs =
+    valid t .&&.
+    toList t === nub_sort_xs
+  where
+    t = fromDistinctDescList (reverse nub_sort_xs)
+    nub_sort_xs = List.map List.head $ List.groupBy ((==) `on` fst) $ List.sortBy (comparing fst) xs
 
 prop_ascDescList :: [Int] -> Bool
 prop_ascDescList xs = toAscList m == reverse (toDescList m)
@@ -1256,10 +1256,16 @@ prop_fromList :: [Int] -> Bool
 prop_fromList xs
   = case fromList (zip xs xs) of
       t -> t == fromAscList (zip sort_xs sort_xs) &&
-           t == fromDistinctAscList (zip nub_sort_xs nub_sort_xs) &&
            t == List.foldr (uncurry insert) empty (zip xs xs)
   where sort_xs = sort xs
-        nub_sort_xs = List.map List.head $ List.group sort_xs
+
+prop_fromDistinctAscList :: [(Int, A)] -> Property
+prop_fromDistinctAscList xs =
+    valid t .&&.
+    toList t === nub_sort_xs
+  where
+    t = fromDistinctAscList nub_sort_xs
+    nub_sort_xs = List.map List.head $ List.groupBy ((==) `on` fst) $ List.sortBy (comparing fst) xs
 
 ----------------------------------------------------------------
 
@@ -1531,7 +1537,6 @@ prop_foldlWithKey' c n m = foldlWithKey' c' n m === Foldable.foldl' (uncurry . c
   where
     c' acc k v = apply c (acc, k, v)
 
-#if MIN_VERSION_base(4,10,0)
 prop_bifold :: Map Int Int -> Property
 prop_bifold m = Bifoldable.bifold (mapKeys (:[]) ((:[]) <$> m)) === Foldable.fold ((\(k,v) -> [k,v]) <$> toList m)
 
@@ -1565,7 +1570,6 @@ prop_bifoldl' ck cv n m = Bifoldable.bifoldl' ck' cv' n m === Foldable.foldl' c'
     ck' = curry (apply ck)
     cv' = curry (apply cv)
     acc `c'` (k,v) = (acc `ck'` k) `cv'` v
-#endif
 
 prop_keysSet :: [(Int, Int)] -> Bool
 prop_keysSet xs =

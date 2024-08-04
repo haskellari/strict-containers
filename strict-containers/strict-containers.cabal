@@ -39,7 +39,7 @@ Description:
   .
 -- generated list for versions
 -- DO NOT EDIT below, AUTOGEN versions
-  * containers v0.6.6
+  * containers v0.7
   * unordered-containers v0.2.20
   * vector vector-0.13.1.0
 -- DO NOT EDIT above, AUTOGEN versions
@@ -141,6 +141,7 @@ library
     Data.Strict.ContainersUtils.Autogen.StrictMaybe
     Data.Strict.ContainersUtils.Autogen.StrictPair
     Data.Strict.ContainersUtils.Autogen.State
+    Data.Strict.ContainersUtils.Autogen.Prelude
     Data.Strict.ContainersUtils.Autogen.BitUtil
     Data.Strict.ContainersUtils.Autogen.Coercions
     -- DO NOT EDIT above, AUTOGEN ContainersUtils
@@ -160,7 +161,7 @@ library
 common containers-deps
   build-depends:
       array    >=0.4.0.0
-    , base     >=4.9.1   && <5
+    , base     >=4.10    && <5
     , deepseq  >=1.2     && <1.6
     , template-haskell
 
@@ -277,7 +278,7 @@ test-suite vector-tests-O0
   hs-source-dirs: tests
   Build-Depends: base >= 4.5 && < 5, template-haskell, base-orphans >= 0.6, vector, strict-containers,
                  primitive, random,
-                 QuickCheck >= 2.9 && < 2.16, HUnit, tasty,
+                 QuickCheck >= 2.9 && < 2.15, HUnit, tasty,
                  tasty-hunit, tasty-quickcheck,
                  transformers >= 0.2.0.0
 

@@ -21,7 +21,7 @@ import Data.Ord
 import Data.Foldable (foldMap)
 import Data.Function
 import Data.Traversable (Traversable(traverse), foldMapDefault)
-import Prelude hiding (lookup, null, map, filter, foldr, foldl)
+import Prelude hiding (lookup, null, map, filter, foldr, foldl, foldl')
 import qualified Prelude (map)
 
 import Data.List (nub,sort)
@@ -180,10 +180,14 @@ main = defaultMain $ testGroup "intmap-properties"
              , testProperty "deleteMax"            prop_deleteMaxModel
              , testProperty "filter"               prop_filter
              , testProperty "partition"            prop_partition
+             , testProperty "takeWhileAntitone"    prop_takeWhileAntitone
+             , testProperty "dropWhileAntitone"    prop_dropWhileAntitone
+             , testProperty "spanAntitone"         prop_spanAntitone
              , testProperty "map"                  prop_map
              , testProperty "fmap"                 prop_fmap
              , testProperty "mapkeys"              prop_mapkeys
              , testProperty "split"                prop_splitModel
+             , testProperty "splitLookup"          prop_splitLookup
              , testProperty "splitRoot"            prop_splitRoot
              , testProperty "foldr"                prop_foldr
              , testProperty "foldr'"               prop_foldr'
@@ -1469,6 +1473,26 @@ prop_partition p ys = length ys > 0 ==>
       m === let (a,b) = (List.partition (apply p . snd) xs)
             in (fromList a, fromList b)
 
+prop_takeWhileAntitone :: Int -> [(Int, Int)] -> Property
+prop_takeWhileAntitone x ys =
+  let l = takeWhileAntitone (<x) (fromList ys)
+  in  valid l .&&.
+      l === fromList (List.filter ((<x) . fst) ys)
+
+prop_dropWhileAntitone :: Int -> [(Int, Int)] -> Property
+prop_dropWhileAntitone x ys =
+  let r = dropWhileAntitone (<x) (fromList ys)
+  in  valid r .&&.
+      r === fromList (List.filter ((>=x) . fst) ys)
+
+prop_spanAntitone :: Int -> [(Int, Int)] -> Property
+prop_spanAntitone x ys =
+  let (l, r) = spanAntitone (<x) (fromList ys)
+  in  valid l .&&.
+      valid r .&&.
+      l === fromList (List.filter ((<x) . fst) ys) .&&.
+      r === fromList (List.filter ((>=x) . fst) ys)
+
 prop_map :: Fun Int Int -> [(Int, Int)] -> Property
 prop_map f ys = length ys > 0 ==>
   let xs = List.nubBy ((==) `on` fst) ys
@@ -1495,6 +1519,16 @@ prop_splitModel n ys = length ys > 0 ==>
       valid r .&&.
       toAscList l === sort [(k, v) | (k,v) <- xs, k < n] .&&.
       toAscList r === sort [(k, v) | (k,v) <- xs, k > n]
+
+prop_splitLookup :: Int -> [(Int, Int)] -> Property
+prop_splitLookup n ys =
+    let xs = List.nubBy ((==) `on` fst) ys
+        (l, x, r) = splitLookup n (fromList xs)
+    in  valid l .&&.
+        valid r .&&.
+        x === List.lookup n xs .&&.
+        toAscList l === sort [(k, v) | (k,v) <- xs, k < n] .&&.
+        toAscList r === sort [(k, v) | (k,v) <- xs, k > n]
 
 prop_splitRoot :: IMap -> Bool
 prop_splitRoot s = loop ls && (s == unions ls)

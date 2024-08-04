@@ -6,7 +6,9 @@
 module Data.Strict.ContainersUtils.Autogen.State where
 
 import Control.Monad (ap, liftM2)
-import Control.Applicative (Applicative(..), liftA)
+import Control.Applicative (liftA)
+import Data.Strict.ContainersUtils.Autogen.Prelude
+import Prelude ()
 
 newtype State s a = State {runState :: s -> (s, a)}
 
@@ -26,9 +28,7 @@ instance Applicative (State s) where
     (<*>) = ap
     m *> n = State $ \s -> case runState m s of
       (s', _) -> runState n s'
-#if MIN_VERSION_base(4,10,0)
     liftA2 = liftM2
-#endif
 
 execState :: State s a -> s -> a
 execState m x = snd (runState m x)

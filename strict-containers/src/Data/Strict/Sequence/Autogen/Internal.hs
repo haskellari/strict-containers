@@ -191,24 +191,25 @@ module Data.Strict.Sequence.Autogen.Internal (
     node3,
     ) where
 
-import Prelude hiding (
+import Data.Strict.ContainersUtils.Autogen.Prelude hiding (
     Functor(..),
 #if MIN_VERSION_base(4,11,0)
     (<>),
 #endif
-    Applicative, (<$>), foldMap, Monoid,
-    null, length, lookup, take, drop, splitAt, foldl, foldl1, foldr, foldr1,
+    (<$>), Monoid,
+    null, length, lookup, take, drop, splitAt,
     scanl, scanl1, scanr, scanr1, replicate, zip, zipWith, zip3, zipWith3,
     unzip, takeWhile, dropWhile, iterate, reverse, filter, mapM, sum, all)
-import Control.Applicative (Applicative(..), (<$>), (<**>),  Alternative,
-                            liftA2, liftA3)
+import Prelude ()
+import Control.Applicative ((<$>), (<**>),  Alternative,
+                            liftA3)
 import qualified Control.Applicative as Applicative
 import Control.DeepSeq (NFData(rnf))
 import Control.Monad (MonadPlus(..))
 import Data.Monoid (Monoid(..))
 import Data.Functor (Functor(..))
 import Data.Strict.ContainersUtils.Autogen.State (State(..), execState)
-import Data.Foldable (Foldable(foldl, foldl1, foldr, foldr1, foldMap, foldl', foldr'), toList)
+import Data.Foldable (foldr', toList)
 import qualified Data.Foldable as F
 
 import qualified Data.Semigroup as Semigroup
@@ -223,6 +224,8 @@ import Text.Read (Lexeme(Ident), lexP, parens, prec,
 import Data.Data
 import Data.String (IsString(..))
 import qualified Language.Haskell.TH.Syntax as TH
+-- See Note [ Template Haskell Dependencies ]
+import Language.Haskell.TH ()
 import GHC.Generics (Generic, Generic1)
 #endif
 
@@ -269,10 +272,8 @@ infixl 5 |>, :>
 infixr 5 :<|
 infixl 5 :|>
 
-#if __GLASGOW_HASKELL__ >= 801
 {-# COMPLETE (:<|), Empty #-}
 {-# COMPLETE (:|>), Empty #-}
-#endif
 
 -- | A bidirectional pattern synonym matching an empty sequence.
 --
@@ -338,7 +339,7 @@ instance Sized (ForceBox a) where
 newtype Seq a = Seq (FingerTree (Elem a))
 
 #ifdef __GLASGOW_HASKELL__
--- | @since FIXME
+-- | @since 0.6.6
 instance TH.Lift a => TH.Lift (Seq a) where
 #  if MIN_VERSION_template_haskell(2,16,0)
   liftTyped t = [|| coerceFT z ||]
@@ -523,9 +524,7 @@ instance Applicative Seq where
     pure = singleton
     xs *> ys = cycleNTimes (length xs) ys
     (<*>) = apSeq
-#if MIN_VERSION_base(4,10,0)
     liftA2 = liftA2Seq
-#endif
     xs <* ys = beforeSeq xs ys
 
 apSeq :: Seq (a -> b) -> Seq a -> Seq b
@@ -1008,6 +1007,7 @@ deriving instance Generic1 FingerTree
 -- | @since 0.6.1
 deriving instance Generic (FingerTree a)
 
+-- | @since 0.6.6
 deriving instance TH.Lift a => TH.Lift (FingerTree a)
 #endif
 
@@ -1201,6 +1201,7 @@ deriving instance Generic1 Digit
 -- | @since 0.6.1
 deriving instance Generic (Digit a)
 
+-- | @since 0.6.6
 deriving instance TH.Lift a => TH.Lift (Digit a)
 #endif
 
@@ -1304,6 +1305,7 @@ deriving instance Generic1 Node
 -- | @since 0.6.1
 deriving instance Generic (Node a)
 
+-- | @since 0.6.6
 deriving instance TH.Lift a => TH.Lift (Node a)
 #endif
 
@@ -1702,7 +1704,8 @@ replicateA n x
   | otherwise   = error "replicateA takes a nonnegative integer argument"
 {-# SPECIALIZE replicateA :: Int -> State a b -> State a (Seq b) #-}
 
--- | 'replicateM' is a sequence counterpart of 'Control.Monad.replicateM'.
+-- | 'replicateM' is the @Seq@ counterpart of
+-- @Control.Monad.'Control.Monad.replicateM'@.
 --
 -- > replicateM n x = sequence (replicate n x)
 --
@@ -1879,7 +1882,8 @@ snocTree' (Deep s pr m (One a)) b =
 (><)            :: Seq a -> Seq a -> Seq a
 Seq xs >< Seq ys = Seq (appendTree0 xs ys)
 
--- The appendTree/addDigits gunk below is machine generated
+-- The appendTree/addDigits gunk below was originally machine generated via mkappend.hs,
+-- but has since been manually edited to include strictness annotations.
 
 appendTree0 :: FingerTree (Elem a) -> FingerTree (Elem a) -> FingerTree (Elem a)
 appendTree0 EmptyT xs =
@@ -2171,7 +2175,7 @@ deriving instance Generic1 ViewL
 -- | @since 0.5.8
 deriving instance Generic (ViewL a)
 
--- | @since FIXME
+-- | @since 0.6.6
 deriving instance TH.Lift a => TH.Lift (ViewL a)
 #endif
 
@@ -2238,7 +2242,7 @@ deriving instance Generic1 ViewR
 -- | @since 0.5.8
 deriving instance Generic (ViewR a)
 
--- | @since FIXME
+-- | @since 0.6.6
 deriving instance TH.Lift a => TH.Lift (ViewR a)
 #endif
 
@@ -4637,6 +4641,8 @@ splitMapNode splt f s (Node3 ns a b c) = Node3 ns (f first a) (f second b) (f th
 -- | @ 'mzipWith' = 'zipWith' @
 --
 -- @ 'munzip' = 'unzip' @
+--
+-- @since 0.5.10.1
 instance MonadZip Seq where
   mzipWith = zipWith
   munzip = unzip
