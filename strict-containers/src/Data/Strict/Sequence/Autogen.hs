@@ -249,7 +249,6 @@ import Data.Strict.Sequence.Autogen.Internal.Sorting
 import Prelude ()
 #ifdef __HADDOCK_VERSION__
 import Control.Monad (Monad (..))
-import Control.Applicative (Applicative (..))
 import Data.Functor (Functor (..))
 #endif
 

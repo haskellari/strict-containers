@@ -8,7 +8,8 @@ import Test.QuickCheck
 
 import Data.Foldable
 import Data.Bifunctor
-import qualified Data.Strict.Vector as DV
+import qualified Data.Strict.Vector as DSV
+import qualified Data.Vector as DV
 import qualified Data.Vector.Generic as DVG
 import qualified Data.Vector.Primitive as DVP
 import qualified Data.Vector.Storable as DVS
@@ -99,6 +100,11 @@ instance (Eq a, DVU.Unbox a, TestData a) => TestData (DVU.Vector a) where
   type Model (DVU.Vector a) = [Model a]
   model   = map model    . DVU.toList
   unmodel = DVU.fromList . map unmodel
+
+instance (Eq a, TestData a) => TestData (DSV.Vector a) where
+  type Model (DSV.Vector a) = [Model a]
+  model   = map model    . DSV.toList
+  unmodel = DSV.fromList . map unmodel
 
 #define id_TestData(ty) \
 instance TestData ty where { \
@@ -346,3 +352,9 @@ limitUnfolds f (theirs, ours)
     | ours >= 0
     , Just (out, theirs') <- f theirs = Just (out, (theirs', ours - 1))
     | otherwise                       = Nothing
+
+instance Arbitrary a => Arbitrary (DSV.Vector a) where
+  arbitrary = fmap DSV.fromList arbitrary
+
+instance CoArbitrary a => CoArbitrary (DSV.Vector a) where
+    coarbitrary = coarbitrary . DSV.toList

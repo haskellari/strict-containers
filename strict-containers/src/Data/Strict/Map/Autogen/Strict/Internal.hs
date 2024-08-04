@@ -308,7 +308,9 @@ module Data.Strict.Map.Autogen.Strict.Internal
     , valid
     ) where
 
-import Prelude hiding (lookup,map,filter,foldr,foldl,null,take,drop,splitAt)
+import Data.Strict.ContainersUtils.Autogen.Prelude hiding
+  (lookup,map,filter,foldr,foldl,foldl',null,take,drop,splitAt)
+import Prelude ()
 
 import Data.Strict.Map.Autogen.Internal
   ( Map (..)
@@ -326,6 +328,12 @@ import Data.Strict.Map.Autogen.Internal
   , filterAMissing
   , merge
   , mergeA
+  , fromDistinctAscList_linkTop
+  , fromDistinctAscList_linkAll
+  , fromDistinctDescList_linkTop
+  , fromDistinctDescList_linkAll
+  , FromDistinctMonoState (..)
+  , Stack (..)
   , (!)
   , (!?)
   , (\\)
@@ -538,6 +546,8 @@ insert = go
 -- > insertWith (++) 5 "xxx" (fromList [(5,"a"), (3,"b")]) == fromList [(3, "b"), (5, "xxxa")]
 -- > insertWith (++) 7 "xxx" (fromList [(5,"a"), (3,"b")]) == fromList [(3, "b"), (5, "a"), (7, "xxx")]
 -- > insertWith (++) 5 "xxx" empty                         == singleton 5 "xxx"
+--
+-- Also see the performance note on 'fromListWith'.
 
 insertWith :: Ord k => (a -> a -> a) -> k -> a -> Map k a -> Map k a
 insertWith = go
@@ -582,6 +592,8 @@ insertWithR = go
 -- > insertWithKey f 5 "xxx" (fromList [(5,"a"), (3,"b")]) == fromList [(3, "b"), (5, "5:xxx|a")]
 -- > insertWithKey f 7 "xxx" (fromList [(5,"a"), (3,"b")]) == fromList [(3, "b"), (5, "a"), (7, "xxx")]
 -- > insertWithKey f 5 "xxx" empty                         == singleton 5 "xxx"
+--
+-- Also see the performance note on 'fromListWith'.
 
 -- See Map.Internal.Note: Type of local 'go' function
 insertWithKey :: Ord k => (k -> a -> a -> a) -> k -> a -> Map k a -> Map k a
@@ -637,6 +649,8 @@ insertWithKeyR = go
 -- > let insertLookup kx x t = insertLookupWithKey (\_ a _ -> a) kx x t
 -- > insertLookup 5 "x" (fromList [(5,"a"), (3,"b")]) == (Just "a", fromList [(3, "b"), (5, "x")])
 -- > insertLookup 7 "x" (fromList [(5,"a"), (3,"b")]) == (Nothing,  fromList [(3, "b"), (5, "a"), (7, "x")])
+--
+-- Also see the performance note on 'fromListWith'.
 
 -- See Map.Internal.Note: Type of local 'go' function
 insertLookupWithKey :: Ord k => (k -> a -> a -> a) -> k -> a -> Map k a
@@ -972,9 +986,11 @@ unionsWith f ts
 {--------------------------------------------------------------------
   Union with a combining function
 --------------------------------------------------------------------}
--- | \(O\bigl(m \log\bigl(\frac{n+1}{m+1}\bigr)\bigr), \; m \leq n\). Union with a combining function.
+-- | \(O\bigl(m \log\bigl(\frac{n}{m}+1\bigr)\bigr), \; 0 < m \leq n\). Union with a combining function.
 --
 -- > unionWith (++) (fromList [(5, "a"), (3, "b")]) (fromList [(5, "A"), (7, "C")]) == fromList [(3, "b"), (5, "aA"), (7, "C")]
+--
+-- Also see the performance note on 'fromListWith'.
 
 unionWith :: Ord k => (a -> a -> a) -> Map k a -> Map k a -> Map k a
 unionWith _f t1 Tip = t1
@@ -988,11 +1004,13 @@ unionWith f (Bin _ k1 x1 l1 r1) t2 = case splitLookup k1 t2 of
 {-# INLINABLE unionWith #-}
 #endif
 
--- | \(O\bigl(m \log\bigl(\frac{n+1}{m+1}\bigr)\bigr), \; m \leq n\).
+-- | \(O\bigl(m \log\bigl(\frac{n}{m}+1\bigr)\bigr), \; 0 < m \leq n\).
 -- Union with a combining function.
 --
 -- > let f key left_value right_value = (show key) ++ ":" ++ left_value ++ "|" ++ right_value
 -- > unionWithKey f (fromList [(5, "a"), (3, "b")]) (fromList [(5, "A"), (7, "C")]) == fromList [(3, "b"), (5, "5:a|A"), (7, "C")]
+--
+-- Also see the performance note on 'fromListWith'.
 
 unionWithKey :: Ord k => (k -> a -> a -> a) -> Map k a -> Map k a -> Map k a
 unionWithKey _f t1 Tip = t1
@@ -1046,7 +1064,7 @@ differenceWithKey f = merge preserveMissing dropMissing (zipWithMaybeMatched f)
   Intersection
 --------------------------------------------------------------------}
 
--- | \(O\bigl(m \log\bigl(\frac{n+1}{m+1}\bigr)\bigr), \; m \leq n\). Intersection with a combining function.
+-- | \(O\bigl(m \log\bigl(\frac{n}{m}+1\bigr)\bigr), \; 0 < m \leq n\). Intersection with a combining function.
 --
 -- > intersectionWith (++) (fromList [(5, "a"), (3, "b")]) (fromList [(5, "A"), (7, "C")]) == singleton 5 "aA"
 
@@ -1064,7 +1082,7 @@ intersectionWith f (Bin _ k x1 l1 r1) t2 = case mb of
 {-# INLINABLE intersectionWith #-}
 #endif
 
--- | \(O\bigl(m \log\bigl(\frac{n+1}{m+1}\bigr)\bigr), \; m \leq n\). Intersection with a combining function.
+-- | \(O\bigl(m \log\bigl(\frac{n}{m}+1\bigr)\bigr), \; 0 < m \leq n\). Intersection with a combining function.
 --
 -- > let f k al ar = (show k) ++ ":" ++ al ++ "|" ++ ar
 -- > intersectionWithKey f (fromList [(5, "a"), (3, "b")]) (fromList [(5, "A"), (7, "C")]) == singleton 5 "5:a|A"
@@ -1385,7 +1403,7 @@ mapWithKey f (Bin sx kx x l r) =
 #endif
 
 -- | \(O(n)\).
--- @'traverseWithKey' f m == 'fromList' <$> 'traverse' (\(k, v) -> (\v' -> v' \`seq\` (k,v')) <$> f k v) ('toList' m)@
+-- @'traverseWithKey' f m == 'fromList' \<$\> 'traverse' (\\(k, v) -> (\v' -> v' \`seq\` (k,v')) \<$\> f k v) ('toList' m)@
 -- That is, it behaves much like a regular 'traverse' except that the traversing
 -- function also has access to the key associated with a value and the values are
 -- forced before they are installed in the result map.
@@ -1450,6 +1468,8 @@ mapAccumRWithKey f a (Bin sx kx x l r) =
 --
 -- > mapKeysWith (++) (\ _ -> 1) (fromList [(1,"b"), (2,"a"), (3,"d"), (4,"c")]) == singleton 1 "cdab"
 -- > mapKeysWith (++) (\ _ -> 3) (fromList [(1,"b"), (2,"a"), (3,"d"), (4,"c")]) == singleton 3 "cdab"
+--
+-- Also see the performance note on 'fromListWith'.
 
 mapKeysWith :: Ord k2 => (a -> a -> a) -> (k1->k2) -> Map k1 a -> Map k2 a
 mapKeysWith c f = fromListWith c . foldrWithKey (\k x xs -> (f k, x) : xs) []
@@ -1471,7 +1491,7 @@ fromSet :: (k -> a) -> Set.Set k -> Map k a
 fromSet _ Set.Tip = Tip
 fromSet f (Set.Bin sz x l r) = case f x of v -> v `seq` Bin sz x v (fromSet f l) (fromSet f r)
 
--- | /O(n)/. Build a map from a set of elements contained inside 'Arg's.
+-- | \(O(n)\). Build a map from a set of elements contained inside 'Arg's.
 --
 -- > fromArgSet (Data.Set.fromList [Arg 3 "aaa", Arg 5 "aaaaa"]) == fromList [(5,"aaaaa"), (3,"aaa")]
 -- > fromArgSet Data.Set.empty == empty
@@ -1487,8 +1507,7 @@ fromArgSet (Set.Bin sz (Arg x v) l r) = v `seq` Bin sz x v (fromArgSet l) (fromA
 -- If the list contains more than one value for the same key, the last value
 -- for the key is retained.
 --
--- If the keys of the list are ordered, linear-time implementation is used,
--- with the performance equal to 'fromDistinctAscList'.
+-- If the keys of the list are ordered, a linear-time implementation is used.
 --
 -- > fromList [] == empty
 -- > fromList [(5,"a"), (3,"b"), (5, "c")] == fromList [(5,"c"), (3,"b")]
@@ -1537,8 +1556,39 @@ fromList ((kx0, x0) : xs0) | not_ordered kx0 xs0 = x0 `seq` fromList' (Bin 1 kx0
 
 -- | \(O(n \log n)\). Build a map from a list of key\/value pairs with a combining function. See also 'fromAscListWith'.
 --
--- > fromListWith (++) [(5,"a"), (5,"b"), (3,"b"), (3,"a"), (5,"a")] == fromList [(3, "ab"), (5, "aba")]
+-- > fromListWith (++) [(5,"a"), (5,"b"), (3,"x"), (5,"c")] == fromList [(3, "x"), (5, "cba")]
 -- > fromListWith (++) [] == empty
+--
+-- Note the reverse ordering of @"cba"@ in the example.
+--
+-- The symmetric combining function @f@ is applied in a left-fold over the list, as @f new old@.
+--
+-- === Performance
+--
+-- You should ensure that the given @f@ is fast with this order of arguments.
+--
+-- Symmetric functions may be slow in one order, and fast in another.
+-- For the common case of collecting values of matching keys in a list, as above:
+--
+-- The complexity of @(++) a b@ is \(O(a)\), so it is fast when given a short list as its first argument.
+-- Thus:
+--
+-- > fromListWith       (++)  (replicate 1000000 (3, "x"))   -- O(n),  fast
+-- > fromListWith (flip (++)) (replicate 1000000 (3, "x"))   -- O(n²), extremely slow
+--
+-- because they evaluate as, respectively:
+--
+-- > fromList [(3, "x" ++ ("x" ++ "xxxxx..xxxxx"))]   -- O(n)
+-- > fromList [(3, ("xxxxx..xxxxx" ++ "x") ++ "x")]   -- O(n²)
+--
+-- Thus, to get good performance with an operation like @(++)@ while also preserving
+-- the same order as in the input list, reverse the input:
+--
+-- > fromListWith (++) (reverse [(5,"a"), (5,"b"), (5,"c")]) == fromList [(5, "abc")]
+--
+-- and it is always fast to combine singleton-list values @[v]@ with @fromListWith (++)@, as in:
+--
+-- > fromListWith (++) $ reverse $ map (\(k, v) -> (k, [v])) someListOfTuples
 
 fromListWith :: Ord k => (a -> a -> a) -> [(k,a)] -> Map k a
 fromListWith f xs
@@ -1549,9 +1599,11 @@ fromListWith f xs
 
 -- | \(O(n \log n)\). Build a map from a list of key\/value pairs with a combining function. See also 'fromAscListWithKey'.
 --
--- > let f k a1 a2 = (show k) ++ a1 ++ a2
--- > fromListWithKey f [(5,"a"), (5,"b"), (3,"b"), (3,"a"), (5,"a")] == fromList [(3, "3ab"), (5, "5a5ba")]
+-- > let f key new_value old_value = show key ++ ":" ++ new_value ++ "|" ++ old_value
+-- > fromListWithKey f [(5,"a"), (5,"b"), (3,"b"), (3,"a"), (5,"c")] == fromList [(3, "3:a|b"), (5, "5:c|5:b|a")]
 -- > fromListWithKey f [] == empty
+--
+-- Also see the performance note on 'fromListWith'.
 
 fromListWithKey :: Ord k => (k -> a -> a -> a) -> [(k,a)] -> Map k a
 fromListWithKey f xs
@@ -1608,6 +1660,8 @@ fromDescList xs
 -- > fromAscListWith (++) [(3,"b"), (5,"a"), (5,"b")] == fromList [(3, "b"), (5, "ba")]
 -- > valid (fromAscListWith (++) [(3,"b"), (5,"a"), (5,"b")]) == True
 -- > valid (fromAscListWith (++) [(5,"a"), (3,"b"), (5,"b")]) == False
+--
+-- Also see the performance note on 'fromListWith'.
 
 fromAscListWith :: Eq k => (a -> a -> a) -> [(k,a)] -> Map k a
 fromAscListWith f xs
@@ -1622,6 +1676,8 @@ fromAscListWith f xs
 -- > fromDescListWith (++) [(5,"a"), (5,"b"), (3,"b")] == fromList [(3, "b"), (5, "ba")]
 -- > valid (fromDescListWith (++) [(5,"a"), (5,"b"), (3,"b")]) == True
 -- > valid (fromDescListWith (++) [(5,"a"), (3,"b"), (5,"b")]) == False
+--
+-- Also see the performance note on 'fromListWith'.
 
 fromDescListWith :: Eq k => (a -> a -> a) -> [(k,a)] -> Map k a
 fromDescListWith f xs
@@ -1638,6 +1694,8 @@ fromDescListWith f xs
 -- > fromAscListWithKey f [(3,"b"), (5,"a"), (5,"b"), (5,"b")] == fromList [(3, "b"), (5, "5:b5:ba")]
 -- > valid (fromAscListWithKey f [(3,"b"), (5,"a"), (5,"b"), (5,"b")]) == True
 -- > valid (fromAscListWithKey f [(5,"a"), (3,"b"), (5,"b"), (5,"b")]) == False
+--
+-- Also see the performance note on 'fromListWith'.
 
 fromAscListWithKey :: Eq k => (k -> a -> a -> a) -> [(k,a)] -> Map k a
 fromAscListWithKey f xs
@@ -1666,6 +1724,8 @@ fromAscListWithKey f xs
 -- > fromDescListWithKey f [(5,"a"), (5,"b"), (5,"b"), (3,"b")] == fromList [(3, "b"), (5, "5:b5:ba")]
 -- > valid (fromDescListWithKey f [(5,"a"), (5,"b"), (5,"b"), (3,"b")]) == True
 -- > valid (fromDescListWithKey f [(5,"a"), (3,"b"), (5,"b"), (5,"b")]) == False
+--
+-- Also see the performance note on 'fromListWith'.
 
 fromDescListWithKey :: Eq k => (k -> a -> a -> a) -> [(k,a)] -> Map k a
 fromDescListWithKey f xs
@@ -1695,23 +1755,15 @@ fromDescListWithKey f xs
 
 -- For some reason, when 'singleton' is used in fromDistinctAscList or in
 -- create, it is not inlined, so we inline it manually.
-fromDistinctAscList :: [(k,a)] -> Map k a
-fromDistinctAscList [] = Tip
-fromDistinctAscList ((kx0, x0) : xs0) = x0 `seq` go (1::Int) (Bin 1 kx0 x0 Tip Tip) xs0
-  where
-    go !_ t [] = t
-    go s l ((kx, x) : xs) =
-      case create s xs of
-        (r :*: ys) -> x `seq` let !t' = link kx x l r
-                           in go (s `shiftL` 1) t' ys
 
-    create !_ [] = (Tip :*: [])
-    create s xs@(x' : xs')
-      | s == 1 = case x' of (kx, x) -> x `seq` (Bin 1 kx x Tip Tip :*: xs')
-      | otherwise = case create (s `shiftR` 1) xs of
-                      res@(_ :*: []) -> res
-                      (l :*: (ky, y):ys) -> case create (s `shiftR` 1) ys of
-                        (r :*: zs) -> y `seq` (link ky y l r :*: zs)
+-- See Note [fromDistinctAscList implementation] in Data.Set.Internal.
+fromDistinctAscList :: [(k,a)] -> Map k a
+fromDistinctAscList = fromDistinctAscList_linkAll . Foldable.foldl' next (State0 Nada)
+  where
+    next :: FromDistinctMonoState k a -> (k,a) -> FromDistinctMonoState k a
+    next (State0 stk) (!kx, !x) = fromDistinctAscList_linkTop (Bin 1 kx x Tip Tip) stk
+    next (State1 l stk) (kx, x) = State0 (Push kx x l stk)
+{-# INLINE fromDistinctAscList #-}  -- INLINE for fusion
 
 -- | \(O(n)\). Build a map from a descending list of distinct elements in linear time.
 -- /The precondition is not checked./
@@ -1722,20 +1774,12 @@ fromDistinctAscList ((kx0, x0) : xs0) = x0 `seq` go (1::Int) (Bin 1 kx0 x0 Tip T
 
 -- For some reason, when 'singleton' is used in fromDistinctDescList or in
 -- create, it is not inlined, so we inline it manually.
-fromDistinctDescList :: [(k,a)] -> Map k a
-fromDistinctDescList [] = Tip
-fromDistinctDescList ((kx0, x0) : xs0) = x0 `seq` go (1::Int) (Bin 1 kx0 x0 Tip Tip) xs0
-  where
-    go !_ t [] = t
-    go s r ((kx, x) : xs) =
-      case create s xs of
-        (l :*: ys) -> x `seq` let !t' = link kx x l r
-                              in go (s `shiftL` 1) t' ys
 
-    create !_ [] = (Tip :*: [])
-    create s xs@(x' : xs')
-      | s == 1 = case x' of (kx, x) -> x `seq` (Bin 1 kx x Tip Tip :*: xs')
-      | otherwise = case create (s `shiftR` 1) xs of
-                      res@(_ :*: []) -> res
-                      (r :*: (ky, y):ys) -> case create (s `shiftR` 1) ys of
-                        (l :*: zs) -> y `seq` (link ky y l r :*: zs)
+-- See Note [fromDistinctAscList implementation] in Data.Set.Internal.
+fromDistinctDescList :: [(k,a)] -> Map k a
+fromDistinctDescList = fromDistinctDescList_linkAll . Foldable.foldl' next (State0 Nada)
+  where
+    next :: FromDistinctMonoState k a -> (k,a) -> FromDistinctMonoState k a
+    next (State0 stk) (!kx, !x) = fromDistinctDescList_linkTop (Bin 1 kx x Tip Tip) stk
+    next (State1 r stk) (kx, x) = State0 (Push kx x r stk)
+{-# INLINE fromDistinctDescList #-}  -- INLINE for fusion

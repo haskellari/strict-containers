@@ -217,6 +217,10 @@ module Data.Strict.IntMap.Autogen.Strict (
     , partition
     , partitionWithKey
 
+    , takeWhileAntitone
+    , dropWhileAntitone
+    , spanAntitone
+
     , mapMaybe
     , mapMaybeWithKey
     , mapEither
