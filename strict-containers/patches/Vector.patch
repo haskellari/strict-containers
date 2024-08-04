@@ -16,10 +16,10 @@ type ([.. ->] a -> ..), e.g. from Data.Primitive.Array or a GHC primop.
 
 For more discussion see https://github.com/haskell/vector/issues/380
 
-diff --git a/src/Data/Strict/Vector/Autogen.hs b/src/Data/Strict/Vector/Autogen.hs
-index ce0814a..fe20777 100644
---- a/src/Data/Strict/Vector/Autogen.hs
-+++ b/src/Data/Strict/Vector/Autogen.hs
+diff --git b/src/Data/Strict/Vector/Autogen.hs a/src/Data/Strict/Vector/Autogen.hs
+index 0e4fdcb..9f526c5 100644
+--- b/src/Data/Strict/Vector/Autogen.hs
++++ a/src/Data/Strict/Vector/Autogen.hs
 @@ -177,8 +177,8 @@ module Data.Strict.Vector.Autogen (
  
  import Data.Strict.Vector.Autogen.Mutable  ( MVector(..) )
@@ -31,7 +31,16 @@ index ce0814a..fe20777 100644
  
  import Control.DeepSeq ( NFData(rnf)
  #if MIN_VERSION_deepseq(1,4,3)
-@@ -291,6 +289,9 @@ instance G.Vector Vector a where
+@@ -199,7 +199,7 @@ import Data.Function ( fix )
+ 
+ import Prelude
+   ( Eq, Ord, Num, Enum, Monoid, Functor, Monad, Show, Bool, Ordering(..), Int, Maybe, Either
+-  , compare, mempty, mappend, mconcat, return, showsPrec, fmap, otherwise, id, flip, const
++  , compare, mempty, mappend, mconcat, return, showsPrec, fmap, otherwise, id, flip, const, seq
+   , (>>=), (+), (-), (<), (<=), (>), (>=), (==), (/=), (&&), (.), ($) )
+ 
+ import Data.Functor.Classes (Eq1 (..), Ord1 (..), Read1 (..), Show1 (..))
+@@ -285,6 +285,9 @@ instance G.Vector Vector a where
    basicUnsafeCopy (MVector i n dst) (Vector j _ src)
      = copyArray dst i src j n
  
@@ -41,10 +50,10 @@ index ce0814a..fe20777 100644
  -- See http://trac.haskell.org/vector/ticket/12
  instance Eq a => Eq (Vector a) where
    {-# INLINE (==) #-}
-diff --git a/src/Data/Strict/Vector/Autogen/Mutable.hs b/src/Data/Strict/Vector/Autogen/Mutable.hs
-index 5d85f12..83af3c4 100644
---- a/src/Data/Strict/Vector/Autogen/Mutable.hs
-+++ b/src/Data/Strict/Vector/Autogen/Mutable.hs
+diff --git b/src/Data/Strict/Vector/Autogen/Mutable.hs a/src/Data/Strict/Vector/Autogen/Mutable.hs
+index 05d8b03..bc2418b 100644
+--- b/src/Data/Strict/Vector/Autogen/Mutable.hs
++++ a/src/Data/Strict/Vector/Autogen/Mutable.hs
 @@ -71,7 +71,7 @@ module Data.Strict.Vector.Autogen.Mutable (
  ) where
  
@@ -54,7 +63,7 @@ index 5d85f12..83af3c4 100644
  import           Data.Strict.Vector.Autogen.Internal.Check
  import           Data.Primitive.Array
  import           Control.Monad.Primitive
-@@ -133,7 +133,7 @@ instance G.MVector MVector a where
+@@ -135,7 +135,7 @@ instance G.MVector MVector a where
    basicInitialize _ = return ()
  
    {-# INLINE basicUnsafeReplicate #-}
@@ -63,7 +72,7 @@ index 5d85f12..83af3c4 100644
      = do
          arr <- newArray n x
          return (MVector 0 n arr)
-@@ -142,7 +142,7 @@ instance G.MVector MVector a where
+@@ -144,7 +144,7 @@ instance G.MVector MVector a where
    basicUnsafeRead (MVector i _ arr) j = readArray arr (i+j)
  
    {-# INLINE basicUnsafeWrite #-}
