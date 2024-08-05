@@ -1,5 +1,5 @@
 Name:           strict-containers-serialise
-Version:        0.2
+Version:        0.2.1
 Synopsis:       Strict containers - Serialise instances
 Category:       Data, Data Structures, Codec
 Description:
