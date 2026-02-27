@@ -78,7 +78,7 @@ library
       base                    >= 4.5.0.0   && < 5
     , array                   >= 0.4.0.0
     , binary                  >= 0.8.4.1   && < 0.9
-    , containers              >= 0.6.6     && < 0.8
+    , containers              >= 0.6.6     && < 0.9
     , deepseq                 >= 1.2       && < 1.6
     , indexed-traversable     >= 0.1.1     && < 0.2
     , hashable                >= 1.2.7.0   && < 1.6
@@ -279,7 +279,7 @@ test-suite vector-tests-O0
   hs-source-dirs: tests
   Build-Depends: base >= 4.5 && < 5, template-haskell, base-orphans >= 0.6, vector, strict-containers,
                  primitive, random,
-                 QuickCheck >= 2.9 && < 2.15, HUnit, tasty,
+                 QuickCheck >= 2.9 && < 2.19, HUnit, tasty,
                  tasty-hunit, tasty-quickcheck,
                  transformers >= 0.2.0.0
 
