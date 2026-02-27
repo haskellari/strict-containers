@@ -65,9 +65,10 @@ tested-with:
    || ==9.0.2
    || ==9.2.8
    || ==9.4.8
-   || ==9.6.5
+   || ==9.6.7
    || ==9.8.2
-   || ==9.10.1
+   || ==9.10.3
+   || ==9.12.2
 
 library
   default-language: Haskell2010
@@ -169,7 +170,7 @@ common containers-deps
 common containers-test-deps
   import: containers-deps
   build-depends:
-      strict-containers,containers
+      strict-containers
     , QuickCheck                  >=2.7.1
     , tasty
     , tasty-hunit
@@ -183,6 +184,8 @@ test-suite map-strict-properties
   main-is:          map-properties.hs
   type:             exitcode-stdio-1.0
   cpp-options:      -DSTRICT
+  build-depends:
+    , containers
 
   ghc-options:      -O2
   other-extensions:
@@ -196,7 +199,8 @@ test-suite map-strictness-properties
   main-is:          map-strictness.hs
   type:             exitcode-stdio-1.0
   build-depends:
-      ChasingBottoms
+    , ChasingBottoms
+    , containers
 
   ghc-options:      -Wall
   other-extensions:
@@ -220,6 +224,8 @@ test-suite intmap-strict-properties
   type:             exitcode-stdio-1.0
   cpp-options:      -DSTRICT
   other-modules:    IntMapValidity
+  build-depends:
+    , containers
 
   ghc-options:      -O2
   other-extensions:
@@ -237,7 +243,8 @@ test-suite intmap-strictness-properties
     CPP
 
   build-depends:
-      ChasingBottoms
+    , ChasingBottoms
+    , containers
 
   ghc-options:      -Wall
 
@@ -279,7 +286,7 @@ test-suite vector-tests-O0
   hs-source-dirs: tests
   Build-Depends: base >= 4.5 && < 5, template-haskell, base-orphans >= 0.6, vector, strict-containers,
                  primitive, random,
-                 QuickCheck >= 2.9 && < 2.19, HUnit, tasty,
+                 QuickCheck >= 2.9 && < 2.19, tasty,
                  tasty-hunit, tasty-quickcheck,
                  transformers >= 0.2.0.0
 
